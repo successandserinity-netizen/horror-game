@@ -1,4 +1,4 @@
-﻿import pygame
+import pygame
 import random
 import math
 import os
@@ -347,6 +347,9 @@ true_ending = False
 memory_ending = False
 vhs5_ending = False
 mary_shaw_ending = False
+
+# NEW
+death_ending = False
 
 
 # ============================================================
@@ -864,7 +867,6 @@ def update_creature():
                     fear_level + 4
                 )
 
-        # Occasionally move
         if random.randint(
             1,
             100
@@ -929,7 +931,6 @@ def update_creature():
                 "IT DISAPPEARED."
             )
 
-    # Keep inside room
     creature_x = max(
         65,
         min(935, creature_x)
@@ -980,6 +981,10 @@ def update_creature():
         creature_visible = False
         creature_state = "idle"
 
+        # ====================================================
+        # NEW DEATH ENDING
+        # ====================================================
+
         if health <= 0:
 
             show_message(
@@ -987,8 +992,10 @@ def update_creature():
             )
 
             trigger_ending(
-                "bad"
+                "death"
             )
+
+            return
 
     # ========================================================
     # CREATURE VANISHES
@@ -1792,6 +1799,7 @@ def trigger_ending(kind):
     global memory_ending
     global vhs5_ending
     global mary_shaw_ending
+    global death_ending
 
     if ending:
         return
@@ -1828,6 +1836,10 @@ def trigger_ending(kind):
 
     mary_shaw_ending = (
         kind == "mary_shaw"
+    )
+
+    death_ending = (
+        kind == "death"
     )
 
     finish_run()
@@ -1891,6 +1903,87 @@ def show_ending():
     screen.fill(
         BLACK
     )
+
+    # ========================================================
+    # NEW: YOU DIED
+    # ========================================================
+
+    if death_ending:
+
+        # Dark red background
+        pygame.draw.rect(
+            screen,
+            (18, 2, 5),
+            (0, 0, WIDTH, HEIGHT)
+        )
+
+        # Subtle red pulses
+        pulse = random.randint(
+            0,
+            25
+        )
+
+        overlay = pygame.Surface(
+            (WIDTH, HEIGHT),
+            pygame.SRCALPHA
+        )
+
+        overlay.fill(
+            (120, 0, 10, pulse)
+        )
+
+        screen.blit(
+            overlay,
+            (0, 0)
+        )
+
+        center_text(
+            "YOU DIED",
+            145,
+            BIG_FONT,
+            RED
+        )
+
+        center_text(
+            "THE HOUSE TOOK YOU.",
+            250,
+            FONT,
+            WHITE
+        )
+
+        center_text(
+            "YOU COULDN'T ESCAPE.",
+            305,
+            FONT,
+            GRAY
+        )
+
+        center_text(
+            "THE RECORDING CONTINUES.",
+            360,
+            FONT,
+            RED
+        )
+
+        center_text(
+            "ENDING: DEATH",
+            445,
+            SMALL_FONT,
+            YELLOW
+        )
+
+        center_text(
+            "PRESS R TO PLAY AGAIN",
+            540,
+            FONT,
+            WHITE
+        )
+
+        return
+
+    # ========================================================
+    # MARY SHAW
+    # ========================================================
 
     if mary_shaw_ending:
 
@@ -2980,6 +3073,7 @@ def reset_game():
     global memory_ending
     global vhs5_ending
     global mary_shaw_ending
+    global death_ending
 
     room = "hall"
 
@@ -3051,6 +3145,9 @@ def reset_game():
     memory_ending = False
     vhs5_ending = False
     mary_shaw_ending = False
+
+    # NEW
+    death_ending = False
 
 
 # ============================================================
@@ -3336,8 +3433,7 @@ while running:
 
         draw_room()
 
-        # Shadow appears before flashlight,
-        # so the flashlight can reveal it.
+        # Shadow appears before flashlight
         draw_shadow()
 
         draw_flashlight()
