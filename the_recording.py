@@ -7,7 +7,7 @@ import sys
 pygame.init()
 
 # ============================================================
-# THE RECORDING 4.0
+# THE RECORDING 4.1
 # THE HOUSE REMEMBERS
 # ============================================================
 
@@ -15,13 +15,21 @@ WIDTH = 1000
 HEIGHT = 650
 FPS = 60
 
+pygame.display.set_caption("THE RECORDING 4.1")
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("THE RECORDING 4.0")
 clock = pygame.time.Clock()
+
+# ============================================================
+# FONTS
+# ============================================================
 
 FONT = pygame.font.SysFont("consolas", 22)
 SMALL_FONT = pygame.font.SysFont("consolas", 17)
 BIG_FONT = pygame.font.SysFont("consolas", 46, bold=True)
+
+# ============================================================
+# COLORS
+# ============================================================
 
 BLACK = (3, 3, 6)
 WHITE = (235, 235, 235)
@@ -33,11 +41,11 @@ YELLOW = (210, 180, 50)
 WALL = (12, 12, 16)
 FLOOR = (32, 32, 38)
 
-SAVE_FILE = "recording_save.txt"
+# ============================================================
+# SAVE SYSTEM
+# ============================================================
 
-# ============================================================
-# SAVE
-# ============================================================
+SAVE_FILE = "recording_save.txt"
 
 completed_runs = 0
 new_game_plus = False
@@ -47,17 +55,21 @@ def load_save():
     global completed_runs, new_game_plus
 
     if not os.path.exists(SAVE_FILE):
+        completed_runs = 0
+        new_game_plus = False
         return
 
     try:
         with open(SAVE_FILE, "r", encoding="utf-8") as f:
             data = f.read().strip().split(",")
 
-        if len(data) >= 2:
+        if len(data) >= 1:
             completed_runs = max(0, int(data[0]))
+
+        if len(data) >= 2:
             new_game_plus = bool(int(data[1]))
 
-    except (ValueError, OSError):
+    except Exception:
         completed_runs = 0
         new_game_plus = False
 
@@ -65,8 +77,10 @@ def load_save():
 def save_progress():
     try:
         with open(SAVE_FILE, "w", encoding="utf-8") as f:
-            f.write(f"{completed_runs},{int(new_game_plus)}")
-    except OSError:
+            f.write(
+                f"{completed_runs},{int(new_game_plus)}"
+            )
+    except Exception:
         pass
 
 
@@ -108,117 +122,48 @@ hall_door = pygame.Rect(920, 260, 45, 120)
 bedroom_tv = pygame.Rect(420, 120, 150, 85)
 vhs2 = pygame.Rect(170, 150, 35, 35)
 key2 = pygame.Rect(750, 430, 25, 25)
+bedroom_hall_door = pygame.Rect(30, 260, 45, 120)
+bedroom_basement_door = pygame.Rect(920, 500, 45, 100)
 
-bedroom_hall_door = pygame.Rect(
-    30,
-    260,
-    45,
-    120
-)
+bed = pygame.Rect(300, 320, 300, 160)
 
-bedroom_basement_door = pygame.Rect(
-    920,
-    500,
-    45,
-    100
-)
+basement_tv = pygame.Rect(250, 130, 180, 100)
+power_switch = pygame.Rect(120, 180, 35, 55)
+vhs3 = pygame.Rect(730, 420, 35, 35)
+basement_exit = pygame.Rect(450, 40, 100, 55)
+secret_door = pygame.Rect(850, 120, 70, 100)
 
-bed = pygame.Rect(
-    300,
-    320,
-    300,
-    160
-)
-
-basement_tv = pygame.Rect(
-    250,
-    130,
-    180,
-    100
-)
-
-power_switch = pygame.Rect(
-    120,
-    180,
-    35,
-    55
-)
-
-vhs3 = pygame.Rect(
-    730,
-    420,
-    35,
-    35
-)
-
-basement_exit = pygame.Rect(
-    450,
-    40,
-    100,
-    55
-)
-
-# ============================================================
-# SECRET ROOM
-# ============================================================
-
-secret_door = pygame.Rect(
-    850,
-    120,
-    70,
-    100
-)
-
-secret_tv = pygame.Rect(
-    400,
-    120,
-    180,
-    100
-)
-
-vhs4 = pygame.Rect(
-    760,
-    450,
-    35,
-    35
-)
-
-secret_exit = pygame.Rect(
-    450,
-    40,
-    100,
-    55
-)
-
-vhs5 = pygame.Rect(
-    740,
-    280,
-    35,
-    35
-)
+secret_tv = pygame.Rect(400, 120, 180, 100)
+vhs4 = pygame.Rect(760, 450, 35, 35)
+vhs5 = pygame.Rect(740, 280, 35, 35)
+secret_exit = pygame.Rect(450, 40, 100, 55)
 
 fuse_rects = [
     pygame.Rect(600, 160, 30, 30),
     pygame.Rect(650, 160, 30, 30),
-    pygame.Rect(700, 160, 30, 30)
+    pygame.Rect(700, 160, 30, 30),
 ]
 
 # ============================================================
-# ITEMS
+# ITEM STATE
 # ============================================================
 
 has_vhs1 = False
-watched_vhs1 = False
-has_key1 = False
-
 has_vhs2 = False
+has_vhs3 = False
+has_vhs4 = False
+has_vhs5 = False
+
+watched_vhs1 = False
 watched_vhs2 = False
+watched_vhs3 = False
+watched_vhs4 = False
+watched_vhs5 = False
+
+has_key1 = False
 has_key2 = False
 
 basement_power = False
-
-has_vhs3 = False
-watched_vhs3 = False
 
 fuse1 = False
 fuse2 = False
@@ -226,58 +171,91 @@ fuse3 = False
 
 puzzle_complete = False
 
-has_vhs4 = False
-watched_vhs4 = False
-
-has_vhs5 = False
-watched_vhs5 = False
-
 
 def reset_items():
 
-    global has_vhs1, watched_vhs1, has_key1
-    global has_vhs2, watched_vhs2, has_key2
+    global has_vhs1
+    global has_vhs2
+    global has_vhs3
+    global has_vhs4
+    global has_vhs5
+
+    global watched_vhs1
+    global watched_vhs2
+    global watched_vhs3
+    global watched_vhs4
+    global watched_vhs5
+
+    global has_key1
+    global has_key2
+
     global basement_power
-    global has_vhs3, watched_vhs3
-    global fuse1, fuse2, fuse3, puzzle_complete
-    global has_vhs4, watched_vhs4
-    global has_vhs5, watched_vhs5
+
+    global fuse1
+    global fuse2
+    global fuse3
+
+    global puzzle_complete
 
     has_vhs1 = False
-    watched_vhs1 = False
-    has_key1 = False
-
     has_vhs2 = False
+    has_vhs3 = False
+    has_vhs4 = False
+    has_vhs5 = False
+
+    watched_vhs1 = False
     watched_vhs2 = False
+    watched_vhs3 = False
+    watched_vhs4 = False
+    watched_vhs5 = False
+
+    has_key1 = False
     has_key2 = False
 
     basement_power = False
 
-    has_vhs3 = False
-    watched_vhs3 = False
-
     fuse1 = False
     fuse2 = False
     fuse3 = False
+
     puzzle_complete = False
-
-    has_vhs4 = False
-    watched_vhs4 = False
-
-    has_vhs5 = False
-    watched_vhs5 = False
 
 
 # ============================================================
-# HORROR
+# HORROR STATE
 # ============================================================
 
 creature_visible = False
+
 creature_x = 800.0
 creature_y = 300.0
+
 creature_state = "idle"
 creature_timer = 0
 creature_chase_timer = 0
+
+# ============================================================
+# AFK GHOST SYSTEM
+# ============================================================
+
+AFK_WARNING = 90
+AFK_LIMIT = 180
+AFK_HUNT_TIME = 420
+
+afk_timer = 0
+afk_stage = 0
+
+afk_hunt_active = False
+afk_hunt_timer = 0
+
+last_player_x = player.x
+last_player_y = player.y
+
+player_activity = False
+
+# ============================================================
+# HORROR EFFECTS
+# ============================================================
 
 flash_timer = 0
 screen_shake = 0
@@ -291,8 +269,8 @@ fear_level = 10
 # HEALTH
 # ============================================================
 
-health = 100
 MAX_HEALTH = 100
+health = MAX_HEALTH
 
 health_flash_timer = 0
 health_shake_timer = 0
@@ -303,19 +281,16 @@ health_shake_timer = 0
 
 battery = 100
 flashlight_on = True
+
 battery_timer = 0
 flash_flicker_timer = 0
 
 # ============================================================
-# HORROR EVENTS
+# HORROR TIMERS
 # ============================================================
 
 random_event_timer = 0
 tv_glitch_timer = 0
-
-# ============================================================
-# ADVANCED HORROR
-# ============================================================
 
 heartbeat_timer = 0
 
@@ -325,10 +300,6 @@ shadow_y = 0
 shadow_visible = False
 
 house_event_timer = 0
-
-# ============================================================
-# LOOK AWAY
-# ============================================================
 
 look_away_timer = 0
 look_event_count = 0
@@ -347,8 +318,6 @@ true_ending = False
 memory_ending = False
 vhs5_ending = False
 mary_shaw_ending = False
-
-# NEW
 death_ending = False
 
 
@@ -356,7 +325,7 @@ death_ending = False
 # UTILITY
 # ============================================================
 
-def show_message(text, duration=180):
+def show_message(text, duration=150):
 
     global message
     global message_timer
@@ -373,49 +342,6 @@ def distance_to_player(x, y):
     )
 
 
-def draw_text(
-    text,
-    x,
-    y,
-    font=FONT,
-    color=WHITE
-):
-
-    surface = font.render(
-        text,
-        True,
-        color
-    )
-
-    screen.blit(
-        surface,
-        (x, y)
-    )
-
-
-def center_text(
-    text,
-    y,
-    font=FONT,
-    color=WHITE
-):
-
-    surface = font.render(
-        text,
-        True,
-        color
-    )
-
-    screen.blit(
-        surface,
-        (
-            WIDTH // 2 -
-            surface.get_width() // 2,
-            y
-        )
-    )
-
-
 def interactable(rect):
 
     return player.colliderect(
@@ -423,293 +349,233 @@ def interactable(rect):
     )
 
 
-# ============================================================
-# WALLS
-# ============================================================
-
-def draw_walls():
-
-    pygame.draw.rect(
-        screen,
-        FLOOR,
-        (0, 0, WIDTH, HEIGHT)
-    )
-
-    pygame.draw.rect(
-        screen,
-        WALL,
-        (0, 0, WIDTH, 50)
-    )
-
-    pygame.draw.rect(
-        screen,
-        WALL,
-        (0, HEIGHT - 50, WIDTH, 50)
-    )
-
-    pygame.draw.rect(
-        screen,
-        WALL,
-        (0, 0, 50, HEIGHT)
-    )
-
-    pygame.draw.rect(
-        screen,
-        WALL,
-        (WIDTH - 50, 0, 50, HEIGHT)
-    )
-
-    pygame.draw.line(
-        screen,
-        (55, 55, 62),
-        (50, 100),
-        (950, 100),
-        2
-    )
-
-    pygame.draw.line(
-        screen,
-        (20, 20, 25),
-        (50, 560),
-        (950, 560),
-        2
-    )
-
-
-# ============================================================
-# TV
-# ============================================================
-
-def draw_tv(
-    rect,
-    creepy=False,
-    memory=False,
-    creature=False
+def draw_text(
+    text,
+    font,
+    color,
+    x,
+    y,
+    center=False
 ):
 
-    pygame.draw.rect(
-        screen,
-        (25, 25, 30),
-        rect
+    surf = font.render(
+        text,
+        True,
+        color
     )
 
-    pygame.draw.rect(
-        screen,
-        (5, 5, 8),
-        rect,
-        5
+    if center:
+        rect = surf.get_rect(
+            center=(x, y)
+        )
+    else:
+        rect = surf.get_rect(
+            topleft=(x, y)
+        )
+
+    screen.blit(surf, rect)
+
+
+# ============================================================
+# PLAYER ACTIVITY / AFK SYSTEM
+# ============================================================
+
+def register_player_activity():
+
+    global afk_timer
+    global afk_stage
+    global player_activity
+
+    afk_timer = 0
+    afk_stage = 0
+    player_activity = True
+
+
+def update_afk_system():
+
+    global afk_timer
+    global afk_stage
+    global afk_hunt_active
+    global afk_hunt_timer
+
+    global last_player_x
+    global last_player_y
+    global player_activity
+
+    # FIX:
+    # These variables must be global because this function
+    # changes them.
+    global creature_state
+    global creature_chase_timer
+
+    global fear_level
+
+    if ending:
+
+        afk_timer = 0
+        afk_stage = 0
+        player_activity = False
+
+        return
+
+    moved = (
+        player.x != last_player_x
+        or player.y != last_player_y
     )
 
-    inner = pygame.Rect(
-        rect.x + 12,
-        rect.y + 10,
-        rect.width - 24,
-        rect.height - 25
+    # --------------------------------------------------------
+    # PLAYER MOVED / ACTIVITY
+    # --------------------------------------------------------
+
+    if moved or player_activity:
+
+        if moved:
+
+            afk_timer = 0
+            afk_stage = 0
+
+            # Moving breaks the special AFK hunt.
+            # The ghost can still chase normally for a short time.
+            if afk_hunt_active:
+
+                afk_hunt_active = False
+                afk_hunt_timer = 0
+
+                if creature_visible:
+
+                    creature_state = "chase"
+
+                    if creature_chase_timer < 120:
+                        creature_chase_timer = 120
+
+        else:
+
+            afk_timer = 0
+            afk_stage = 0
+
+        last_player_x = player.x
+        last_player_y = player.y
+
+        player_activity = False
+
+        return
+
+    # --------------------------------------------------------
+    # PLAYER HAS NOT MOVED
+    # --------------------------------------------------------
+
+    afk_timer += 1
+
+    # --------------------------------------------------------
+    # WARNING
+    # --------------------------------------------------------
+
+    if (
+        afk_timer >= AFK_WARNING
+        and afk_stage < 1
+    ):
+
+        afk_stage = 1
+
+        show_message(
+            "THE HOUSE NOTICED YOU STOPPED.",
+            150
+        )
+
+        fear_level = min(
+            100,
+            fear_level + 5
+        )
+
+    # --------------------------------------------------------
+    # AFK HUNT
+    # --------------------------------------------------------
+
+    if (
+        afk_timer >= AFK_LIMIT
+        and afk_stage < 2
+    ):
+
+        afk_stage = 2
+
+        start_afk_hunt()
+
+
+def start_afk_hunt():
+
+    global creature_visible
+    global creature_x
+    global creature_y
+
+    global creature_state
+    global creature_timer
+    global creature_chase_timer
+
+    global afk_hunt_active
+    global afk_hunt_timer
+
+    global fear_level
+
+    angle = random.uniform(
+        0,
+        math.pi * 2
     )
 
-    if creature:
+    distance = random.randint(
+        190,
+        260
+    )
 
-        pygame.draw.rect(
-            screen,
-            (10, 5, 12),
-            inner
-        )
+    creature_x = (
+        player.centerx
+        + math.cos(angle) * distance
+    )
 
-        pygame.draw.ellipse(
-            screen,
-            (5, 5, 7),
-            (
-                inner.centerx - 22,
-                inner.centery - 30,
-                44,
-                65
-            )
-        )
+    creature_y = (
+        player.centery
+        + math.sin(angle) * distance
+    )
 
-        pygame.draw.circle(
-            screen,
-            RED,
-            (
-                inner.centerx - 10,
-                inner.centery - 12
-            ),
-            4
-        )
+    creature_x = max(
+        70,
+        min(930, creature_x)
+    )
 
-        pygame.draw.circle(
-            screen,
-            RED,
-            (
-                inner.centerx + 10,
-                inner.centery - 12
-            ),
-            4
-        )
+    creature_y = max(
+        80,
+        min(545, creature_y)
+    )
 
-    elif tv_glitch_timer > 0:
+    creature_visible = True
+    creature_state = "chase"
 
-        pygame.draw.rect(
-            screen,
-            (130, 130, 130),
-            inner
-        )
+    creature_timer = AFK_HUNT_TIME
+    creature_chase_timer = AFK_HUNT_TIME
 
-        for _ in range(9):
+    afk_hunt_active = True
+    afk_hunt_timer = AFK_HUNT_TIME
 
-            y = random.randint(
-                inner.top,
-                inner.bottom - 1
-            )
+    fear_level = min(
+        100,
+        fear_level + 12
+    )
 
-            pygame.draw.line(
-                screen,
-                (20, 20, 25),
-                (inner.left, y),
-                (inner.right, y),
-                random.randint(1, 3)
-            )
+    if (
+        room == "secret"
+        or watched_vhs4
+    ):
 
-    elif memory:
-
-        pygame.draw.rect(
-            screen,
-            (20, 25, 45),
-            inner
-        )
-
-        draw_text(
-            "YOU CAME BACK",
-            inner.x + 15,
-            inner.y + 25,
-            SMALL_FONT
-        )
-
-    elif creepy:
-
-        pygame.draw.rect(
-            screen,
-            (30, 5, 10),
-            inner
-        )
-
-        pygame.draw.circle(
-            screen,
-            WHITE,
-            (
-                inner.centerx - 25,
-                inner.centery - 5
-            ),
-            6
-        )
-
-        pygame.draw.circle(
-            screen,
-            WHITE,
-            (
-                inner.centerx + 25,
-                inner.centery - 5
-            ),
-            6
-        )
-
-        pygame.draw.line(
-            screen,
-            RED,
-            (
-                inner.centerx - 25,
-                inner.centery + 25
-            ),
-            (
-                inner.centerx + 25,
-                inner.centery + 25
-            ),
-            3
+        show_message(
+            "IT WAS WAITING FOR YOU.",
+            180
         )
 
     else:
 
-        pygame.draw.rect(
-            screen,
-            (35, 35, 40),
-            inner
+        show_message(
+            "DON'T STAND STILL.",
+            180
         )
-
-    pygame.draw.rect(
-        screen,
-        (20, 20, 22),
-        (
-            rect.x + 50,
-            rect.bottom,
-            80,
-            15
-        )
-    )
-
-
-# ============================================================
-# OBJECT DRAWING
-# ============================================================
-
-def draw_vhs(rect, number):
-
-    pygame.draw.rect(
-        screen,
-        (18, 18, 22),
-        rect
-    )
-
-    pygame.draw.rect(
-        screen,
-        RED,
-        rect,
-        2
-    )
-
-    draw_text(
-        str(number),
-        rect.x + 11,
-        rect.y + 5,
-        SMALL_FONT
-    )
-
-
-def draw_key(rect):
-
-    pygame.draw.rect(
-        screen,
-        YELLOW,
-        rect
-    )
-
-    pygame.draw.circle(
-        screen,
-        FLOOR,
-        rect.center,
-        5
-    )
-
-
-def draw_fuse(rect, number):
-
-    pygame.draw.rect(
-        screen,
-        (100, 100, 105),
-        rect
-    )
-
-    pygame.draw.rect(
-        screen,
-        (160, 160, 165),
-        rect,
-        2
-    )
-
-    draw_text(
-        str(number),
-        rect.x + 8,
-        rect.y + 3,
-        SMALL_FONT
-    )
 
 
 # ============================================================
@@ -721,113 +587,185 @@ def spawn_creature(x=None, y=None):
     global creature_visible
     global creature_x
     global creature_y
-    global creature_timer
-    global creature_state
 
-    creature_visible = True
-    creature_state = "idle"
+    global creature_state
+    global creature_timer
+    global creature_chase_timer
+
+    global afk_hunt_active
+    global afk_hunt_timer
 
     if x is None:
-
-        creature_x = random.randint(
-            120,
-            880
-        )
-
-    else:
-
-        creature_x = max(
-            70,
-            min(930, x)
+        x = random.randint(
+            100,
+            900
         )
 
     if y is None:
-
-        creature_y = random.randint(
+        y = random.randint(
             100,
-            540
+            520
         )
 
-    else:
+    creature_x = max(
+        70,
+        min(930, float(x))
+    )
 
-        creature_y = max(
-            80,
-            min(545, y)
-        )
+    creature_y = max(
+        80,
+        min(545, float(y))
+    )
+
+    creature_visible = True
+    creature_state = "idle"
 
     creature_timer = random.randint(
         180,
         420
     )
 
+    creature_chase_timer = 0
 
-def draw_creature():
-
-    # Body
-    pygame.draw.ellipse(
-        screen,
-        (8, 8, 11),
-        (
-            int(creature_x - 28),
-            int(creature_y - 55),
-            56,
-            100
-        )
-    )
-
-    # Head
-    pygame.draw.ellipse(
-        screen,
-        (12, 12, 15),
-        (
-            int(creature_x - 24),
-            int(creature_y - 70),
-            48,
-            45
-        )
-    )
-
-    # Eyes
-    pygame.draw.circle(
-        screen,
-        RED,
-        (
-            int(creature_x - 9),
-            int(creature_y - 55)
-        ),
-        4
-    )
-
-    pygame.draw.circle(
-        screen,
-        RED,
-        (
-            int(creature_x + 9),
-            int(creature_y - 55)
-        ),
-        4
-    )
+    afk_hunt_active = False
+    afk_hunt_timer = 0
 
 
 def update_creature():
 
+    global creature_visible
     global creature_x
     global creature_y
-    global creature_visible
-    global creature_timer
+
     global creature_state
+    global creature_timer
     global creature_chase_timer
-    global fear_level
-    global flash_timer
-    global screen_shake
 
     global health
     global health_flash_timer
     global health_shake_timer
+
+    global fear_level
+    global screen_shake
     global heartbeat_timer
 
-    if not creature_visible or ending:
+    global afk_hunt_active
+    global afk_hunt_timer
+
+    global afk_stage
+
+    if ending:
         return
+
+    if not creature_visible:
+        return
+
+    # ========================================================
+    # AFK HUNT
+    # ========================================================
+
+    if afk_hunt_active:
+
+        afk_hunt_timer -= 1
+
+        dx = player.centerx - creature_x
+        dy = player.centery - creature_y
+
+        dist = math.hypot(
+            dx,
+            dy
+        )
+
+        if dist > 0:
+
+            dx /= dist
+            dy /= dist
+
+        speed = (
+            2.4
+            + fear_level / 70.0
+        )
+
+        if room == "secret":
+            speed += 0.5
+
+        creature_x += dx * speed
+        creature_y += dy * speed
+
+        creature_state = "chase"
+
+        # ----------------------------------------------------
+        # ATTACK
+        # ----------------------------------------------------
+
+        if dist < 55:
+
+            damage = 20
+
+            health -= damage
+            health = max(
+                0,
+                health
+            )
+
+            health_flash_timer = 25
+            health_shake_timer = 20
+
+            screen_shake = max(
+                screen_shake,
+                12
+            )
+
+            heartbeat_timer = 30
+
+            fear_level = min(
+                100,
+                fear_level + 10
+            )
+
+            show_message(
+                "IT TOUCHED YOU.",
+                120
+            )
+
+            creature_visible = False
+            afk_hunt_active = False
+            afk_hunt_timer = 0
+            afk_stage = 0
+
+            if health <= 0:
+
+                show_message(
+                    "THE HOUSE TOOK YOU.",
+                    180
+                )
+
+                trigger_ending(
+                    "death"
+                )
+
+            return
+
+        # ----------------------------------------------------
+        # HUNT TIMEOUT
+        # ----------------------------------------------------
+
+        if afk_hunt_timer <= 0:
+
+            afk_hunt_active = False
+            creature_visible = False
+            creature_state = "idle"
+
+            show_message(
+                "IT DISAPPEARED.",
+                100
+            )
+
+        return
+
+    # ========================================================
+    # NORMAL CREATURE
+    # ========================================================
 
     creature_timer -= 1
 
@@ -836,15 +774,14 @@ def update_creature():
         creature_y
     )
 
-    # ========================================================
-    # IDLE
-    # ========================================================
-
     if creature_state == "idle":
 
         if d < 320:
 
-            chance = 2 + fear_level // 12
+            chance = (
+                2
+                + fear_level // 12
+            )
 
             if random.randint(
                 1,
@@ -858,116 +795,100 @@ def update_creature():
                     240
                 )
 
-                show_message(
-                    "IT SAW YOU."
-                )
-
                 fear_level = min(
                     100,
                     fear_level + 4
                 )
 
+        # Random wandering
         if random.randint(
             1,
-            100
-        ) <= 3:
+            120
+        ) == 1:
 
-            angle = random.uniform(
-                0,
-                math.tau
+            creature_x += random.randint(
+                -40,
+                40
             )
 
-            creature_x += (
-                math.cos(angle) * 2
+            creature_y += random.randint(
+                -40,
+                40
             )
 
-            creature_y += (
-                math.sin(angle) * 2
+            creature_x = max(
+                70,
+                min(930, creature_x)
             )
 
-    # ========================================================
-    # CHASE
-    # ========================================================
+            creature_y = max(
+                80,
+                min(545, creature_y)
+            )
 
     elif creature_state == "chase":
 
         creature_chase_timer -= 1
 
-        dx = (
-            player.centerx -
-            creature_x
-        )
+        dx = player.centerx - creature_x
+        dy = player.centery - creature_y
 
-        dy = (
-            player.centery -
-            creature_y
-        )
-
-        length = math.hypot(
+        dist = math.hypot(
             dx,
             dy
         )
 
-        if length > 1:
+        if dist > 0:
 
-            chase_speed = (
-                1.8 +
-                fear_level / 95
-            )
+            dx /= dist
+            dy /= dist
 
-            creature_x += (
-                dx / length
-            ) * chase_speed
+        speed = (
+            1.8
+            + fear_level / 95.0
+        )
 
-            creature_y += (
-                dy / length
-            ) * chase_speed
+        creature_x += dx * speed
+        creature_y += dy * speed
 
         if creature_chase_timer <= 0:
 
             creature_state = "idle"
 
             show_message(
-                "IT DISAPPEARED."
+                "IT DISAPPEARED.",
+                100
             )
 
-    creature_x = max(
-        65,
-        min(935, creature_x)
-    )
-
-    creature_y = max(
-        85,
-        min(545, creature_y)
-    )
-
     # ========================================================
-    # CREATURE ATTACK
+    # NORMAL ATTACK
     # ========================================================
+
+    d = distance_to_player(
+        creature_x,
+        creature_y
+    )
 
     if d < 55:
 
         damage = 20
 
+        health -= damage
+
         health = max(
             0,
-            health - damage
+            health
         )
 
-        health_flash_timer = 15
-        health_shake_timer = 15
+        health_flash_timer = 25
+        health_shake_timer = 20
 
-        heartbeat_timer = 25
-
-        flash_timer = (
-            12 +
-            fear_level // 10
+        screen_shake = max(
+            screen_shake,
+            10
         )
 
-        screen_shake = (
-            10 +
-            fear_level // 8
-        )
+        heartbeat_timer = 30
 
         fear_level = min(
             100,
@@ -975,30 +896,25 @@ def update_creature():
         )
 
         show_message(
-            "IT TOUCHED YOU."
+            "IT TOUCHED YOU.",
+            120
         )
 
         creature_visible = False
-        creature_state = "idle"
-
-        # ====================================================
-        # NEW DEATH ENDING
-        # ====================================================
 
         if health <= 0:
 
             show_message(
-                "THE HOUSE TOOK YOU."
+                "THE HOUSE TOOK YOU.",
+                180
             )
 
             trigger_ending(
                 "death"
             )
 
-            return
-
     # ========================================================
-    # CREATURE VANISHES
+    # NORMAL CREATURE TIMEOUT
     # ========================================================
 
     if creature_timer <= 0:
@@ -1006,19 +922,23 @@ def update_creature():
         creature_visible = False
         creature_state = "idle"
 
+        if not ending:
+
+            show_message(
+                "IT DISAPPEARED.",
+                100
+            )
+
 
 # ============================================================
-# RANDOM HORROR EVENTS
+# HORROR EVENTS
 # ============================================================
 
 def random_horror_event():
 
     global random_event_timer
-    global fear_level
     global tv_glitch_timer
-
-    if ending:
-        return
+    global fear_level
 
     random_event_timer += 1
 
@@ -1032,40 +952,16 @@ def random_horror_event():
 
     random_event_timer = 0
 
-    chance = random.randint(
+    roll = random.randint(
         1,
-        10
+        100
     )
 
-    messages = [
-        "SOMETHING MOVED.",
-        "DID YOU HEAR THAT?",
-        "THE ROOM IS HOLDING ITS BREATH.",
-        "THE HOUSE IS LISTENING.",
-        "DON'T LOOK AT THE TV.",
-        "SOMEONE IS BEHIND YOU."
-    ]
-
-    if chance <= 6:
+    if roll <= 20:
 
         show_message(
-            messages[chance - 1]
-        )
-
-        fear_level = min(
-            100,
-            fear_level + 1
-        )
-
-    elif chance <= 8:
-
-        tv_glitch_timer = random.randint(
-            20,
-            45
-        )
-
-        show_message(
-            "THE SIGNAL IS WRONG."
+            "SOMETHING MOVED.",
+            120
         )
 
         fear_level = min(
@@ -1073,20 +969,74 @@ def random_horror_event():
             fear_level + 2
         )
 
-    else:
+    elif roll <= 40:
 
-        spawn_creature(
-            player.centerx +
-            random.randint(-250, 250),
-
-            player.centery +
-            random.randint(-180, 180)
+        show_message(
+            "DID YOU HEAR THAT?",
+            120
         )
 
+        fear_level = min(
+            100,
+            fear_level + 2
+        )
 
-# ============================================================
-# SHADOW EVENT
-# ============================================================
+    elif roll <= 55:
+
+        show_message(
+            "THE ROOM IS HOLDING ITS BREATH.",
+            140
+        )
+
+    elif roll <= 70:
+
+        show_message(
+            "THE HOUSE IS LISTENING.",
+            140
+        )
+
+        fear_level = min(
+            100,
+            fear_level + 3
+        )
+
+    elif roll <= 85:
+
+        show_message(
+            "DON'T LOOK AT THE TV.",
+            140
+        )
+
+        tv_glitch_timer = 45
+
+    elif roll <= 95:
+
+        show_message(
+            "SOMEONE IS BEHIND YOU.",
+            120
+        )
+
+        fear_level = min(
+            100,
+            fear_level + 4
+        )
+
+    else:
+
+        if not creature_visible:
+
+            spawn_creature(
+                player.centerx
+                + random.randint(-250, 250),
+                player.centery
+                + random.randint(-180, 180)
+            )
+
+            show_message(
+                "IT FOUND YOU.",
+                150
+            )
+
 
 def shadow_event():
 
@@ -1095,9 +1045,6 @@ def shadow_event():
     global shadow_y
     global shadow_visible
     global fear_level
-
-    if ending:
-        return
 
     shadow_timer += 1
 
@@ -1126,90 +1073,49 @@ def shadow_event():
 
     if side == "left":
 
-        shadow_x = 75
-        shadow_y = random.randint(
-            150,
-            500
+        shadow_x = (
+            player.left
+            - random.randint(80, 160)
         )
+
+        shadow_y = player.centery
 
     elif side == "right":
 
-        shadow_x = 900
-        shadow_y = random.randint(
-            150,
-            500
+        shadow_x = (
+            player.right
+            + random.randint(80, 160)
         )
+
+        shadow_y = player.centery
 
     else:
 
-        shadow_x = random.randint(
-            150,
-            850
+        shadow_x = player.centerx
+
+        shadow_y = (
+            player.top
+            - random.randint(80, 150)
         )
 
-        shadow_y = 80
-
     shadow_visible = True
-
-    show_message(
-        "DID SOMETHING JUST MOVE?"
-    )
 
     fear_level = min(
         100,
         fear_level + 3
     )
 
-
-def draw_shadow():
-
-    if not shadow_visible:
-        return
-
-    pygame.draw.ellipse(
-        screen,
-        (5, 5, 7),
-        (
-            shadow_x - 18,
-            shadow_y - 45,
-            36,
-            90
-        )
+    show_message(
+        "DID SOMETHING JUST MOVE?",
+        120
     )
 
-    pygame.draw.circle(
-        screen,
-        (8, 8, 10),
-        (
-            shadow_x - 7,
-            shadow_y - 45
-        ),
-        3
-    )
-
-    pygame.draw.circle(
-        screen,
-        (8, 8, 10),
-        (
-            shadow_x + 7,
-            shadow_y - 45
-        ),
-        3
-    )
-
-
-# ============================================================
-# HOUSE REACTION
-# ============================================================
 
 def house_reaction():
 
     global house_event_timer
     global fear_level
     global tv_glitch_timer
-
-    if ending:
-        return
 
     house_event_timer += 1
 
@@ -1223,107 +1129,50 @@ def house_reaction():
 
     house_event_timer = 0
 
-    event = random.randint(
+    roll = random.randint(
         1,
-        5
+        4
     )
 
-    if event == 1:
-
-        tv_glitch_timer = 20
+    if roll == 1:
 
         show_message(
-            "THE HOUSE KNOWS YOU ARE AFRAID."
+            "THE HOUSE IS LISTENING.",
+            130
         )
 
         fear_level = min(
             100,
-            fear_level + 2
+            fear_level + 3
         )
 
-    elif event == 2:
+    elif roll == 2:
 
         show_message(
-            "THE FLOOR CREAKED BEHIND YOU."
+            "THE SIGNAL IS WRONG.",
+            120
         )
 
-    elif event == 3:
+        tv_glitch_timer = 60
+
+    elif roll == 3:
 
         show_message(
-            "SOMETHING JUST WALKED PAST."
+            "YOU ARE NOT ALONE.",
+            120
         )
 
-    elif event == 4:
-
-        show_message(
-            "THE HOUSE IS GETTING QUIETER."
+        fear_level = min(
+            100,
+            fear_level + 4
         )
 
     else:
 
         show_message(
-            "YOU ARE NOT ALONE."
+            "THE HOUSE REMEMBERS.",
+            150
         )
-
-        fear_level = min(
-            100,
-            fear_level + 2
-        )
-
-
-# ============================================================
-# HEARTBEAT
-# ============================================================
-
-def update_heartbeat():
-
-    global heartbeat_timer
-
-    if ending:
-        return
-
-    if fear_level >= 70:
-
-        chance = max(
-            30,
-            180 - fear_level
-        )
-
-        if random.randint(
-            1,
-            chance
-        ) == 1:
-
-            heartbeat_timer = 8
-
-
-def draw_heartbeat():
-
-    global heartbeat_timer
-
-    if heartbeat_timer <= 0:
-        return
-
-    intensity = min(
-        90,
-        30 + (fear_level - 70) * 2
-    )
-
-    overlay = pygame.Surface(
-        (WIDTH, HEIGHT),
-        pygame.SRCALPHA
-    )
-
-    overlay.fill(
-        (120, 0, 0, intensity)
-    )
-
-    screen.blit(
-        overlay,
-        (0, 0)
-    )
-
-    heartbeat_timer -= 1
 
 
 # ============================================================
@@ -1332,117 +1181,444 @@ def draw_heartbeat():
 
 def draw_flashlight():
 
-    if not flashlight_on or battery <= 0:
+    if not flashlight_on:
         return
 
-    overlay = pygame.Surface(
+    darkness = pygame.Surface(
         (WIDTH, HEIGHT),
         pygame.SRCALPHA
     )
 
-    overlay.fill(
+    darkness.fill(
         (0, 0, 0, 232)
     )
 
     radius = int(
-        170 +
-        battery * 0.35
+        170 + battery * 0.35
     )
 
-    if battery < 30:
+    if battery <= 20:
+        radius -= 30
 
-        radius = (
-            105 +
-            battery
-        )
+    if flash_flicker_timer > 0:
+        radius //= 2
 
-    if flash_flicker_timer <= 0:
-
-        pygame.draw.circle(
-            overlay,
-            (0, 0, 0, 0),
-            player.center,
-            radius
-        )
-
-    else:
-
-        pygame.draw.circle(
-            overlay,
-            (0, 0, 0, 0),
-            player.center,
-            max(
-                70,
-                radius // 2
-            )
-        )
+    pygame.draw.circle(
+        darkness,
+        (0, 0, 0, 0),
+        player.center,
+        radius
+    )
 
     screen.blit(
-        overlay,
+        darkness,
         (0, 0)
     )
 
 
 # ============================================================
-# HEALTH BAR
+# DRAWING
 # ============================================================
 
-def draw_health_bar():
+def draw_walls():
 
-    global health_shake_timer
+    pygame.draw.rect(
+        screen,
+        WALL,
+        ROOM_BOUNDS,
+        10
+    )
 
-    x = 20
-    y = 105
 
-    width = 220
-    height = 18
+def draw_tv(rect, active=False):
 
-    shake_x = 0
-    shake_y = 0
-
-    if health_shake_timer > 0:
-
-        shake_x = random.randint(
-            -5,
-            5
-        )
-
-        shake_y = random.randint(
-            -3,
-            3
-        )
-
-        health_shake_timer -= 1
-
-    x += shake_x
-    y += shake_y
-
-    draw_text(
-        "HEALTH",
-        x,
-        y - 21,
-        SMALL_FONT
+    pygame.draw.rect(
+        screen,
+        (10, 10, 12),
+        rect
     )
 
     pygame.draw.rect(
         screen,
-        (45, 45, 45),
-        (
-            x,
-            y,
-            width,
-            height
-        )
+        GRAY,
+        rect,
+        3
     )
 
-    health_width = int(
-        width *
-        (health / MAX_HEALTH)
+    if active:
+
+        pygame.draw.rect(
+            screen,
+            (35, 35, 40),
+            rect.inflate(-12, -12)
+        )
+
+        for y in range(
+            rect.top + 10,
+            rect.bottom - 10,
+            7
+        ):
+
+            pygame.draw.line(
+                screen,
+                (65, 65, 70),
+                (rect.left + 8, y),
+                (rect.right - 8, y),
+                1
+            )
+
+
+def draw_vhs(rect, number):
+
+    pygame.draw.rect(
+        screen,
+        (25, 25, 28),
+        rect
     )
 
     pygame.draw.rect(
         screen,
         RED,
+        rect,
+        2
+    )
+
+    draw_text(
+        str(number),
+        SMALL_FONT,
+        WHITE,
+        rect.centerx,
+        rect.centery,
+        True
+    )
+
+
+def draw_key(rect):
+
+    pygame.draw.rect(
+        screen,
+        YELLOW,
+        rect
+    )
+
+    pygame.draw.circle(
+        screen,
+        FLOOR,
+        rect.center,
+        5
+    )
+
+
+def draw_fuse(
+    rect,
+    number,
+    installed
+):
+
+    color = (
+        GREEN
+        if installed
+        else GRAY
+    )
+
+    pygame.draw.rect(
+        screen,
+        color,
+        rect
+    )
+
+    pygame.draw.rect(
+        screen,
+        BLACK,
+        rect,
+        2
+    )
+
+    draw_text(
+        str(number),
+        SMALL_FONT,
+        BLACK,
+        rect.centerx,
+        rect.centery,
+        True
+    )
+
+
+def draw_creature():
+
+    if not creature_visible:
+        return
+
+    x = int(creature_x)
+    y = int(creature_y)
+
+    # Shadow
+    pygame.draw.ellipse(
+        screen,
+        (5, 5, 7),
+        pygame.Rect(
+            x - 25,
+            y + 22,
+            50,
+            15
+        )
+    )
+
+    # Body
+    pygame.draw.ellipse(
+        screen,
+        (5, 5, 8),
+        pygame.Rect(
+            x - 18,
+            y - 35,
+            36,
+            70
+        )
+    )
+
+    # Head
+    pygame.draw.circle(
+        screen,
+        (7, 7, 10),
+        (x, y - 40),
+        22
+    )
+
+    # Eyes
+    pygame.draw.circle(
+        screen,
+        RED,
+        (x - 8, y - 43),
+        3
+    )
+
+    pygame.draw.circle(
+        screen,
+        RED,
+        (x + 8, y - 43),
+        3
+    )
+
+
+def draw_shadow():
+
+    if not shadow_visible:
+        return
+
+    pygame.draw.ellipse(
+        screen,
+        (5, 5, 8),
+        pygame.Rect(
+            int(shadow_x) - 22,
+            int(shadow_y) - 40,
+            44,
+            80
+        )
+    )
+
+
+def draw_player():
+
+    pygame.draw.rect(
+        screen,
+        (150, 150, 160),
+        player
+    )
+
+    pygame.draw.rect(
+        screen,
+        BLACK,
+        player,
+        2
+    )
+
+
+# ============================================================
+# ROOM DRAWING
+# ============================================================
+
+def draw_room():
+
+    screen.fill(FLOOR)
+
+    draw_walls()
+
+    if room == "hall":
+
+        draw_tv(
+            hall_tv,
+            watched_vhs1
+        )
+
+        if not has_vhs1:
+            draw_vhs(
+                vhs1,
+                1
+            )
+
+        if not has_key1:
+            draw_key(key1)
+
+        pygame.draw.rect(
+            screen,
+            DARK_RED if not has_key1 else GRAY,
+            hall_door
+        )
+
+    elif room == "bedroom":
+
+        draw_tv(
+            bedroom_tv,
+            watched_vhs2
+        )
+
+        if not has_vhs2:
+            draw_vhs(
+                vhs2,
+                2
+            )
+
+        if not has_key2:
+            draw_key(key2)
+
+        pygame.draw.rect(
+            screen,
+            (50, 45, 50),
+            bed
+        )
+
+        pygame.draw.rect(
+            screen,
+            GRAY,
+            bedroom_hall_door
+        )
+
+        pygame.draw.rect(
+            screen,
+            DARK_RED if not has_key2 else GRAY,
+            bedroom_basement_door
+        )
+
+    elif room == "basement":
+
+        draw_tv(
+            basement_tv,
+            watched_vhs3
+        )
+
+        pygame.draw.rect(
+            screen,
+            YELLOW if not basement_power else GREEN,
+            power_switch
+        )
+
+        if not has_vhs3:
+            draw_vhs(
+                vhs3,
+                3
+            )
+
+        for i, rect in enumerate(
+            fuse_rects
+        ):
+
+            installed = [
+                fuse1,
+                fuse2,
+                fuse3
+            ][i]
+
+            draw_fuse(
+                rect,
+                i + 1,
+                installed
+            )
+
+        pygame.draw.rect(
+            screen,
+            GREEN if puzzle_complete else DARK_RED,
+            basement_exit
+        )
+
+        pygame.draw.rect(
+            screen,
+            GREEN if puzzle_complete else DARK_RED,
+            secret_door
+        )
+
+    elif room == "secret":
+
+        draw_tv(
+            secret_tv,
+            watched_vhs4 or watched_vhs5
+        )
+
+        if not has_vhs4:
+            draw_vhs(
+                vhs4,
+                4
+            )
+
+        if not has_vhs5:
+            draw_vhs(
+                vhs5,
+                5
+            )
+
+        pygame.draw.rect(
+            screen,
+            GREEN if watched_vhs4 else DARK_RED,
+            secret_exit
+        )
+
+    draw_shadow()
+    draw_creature()
+    draw_player()
+
+
+# ============================================================
+# UI
+# ============================================================
+
+def draw_health_bar():
+
+    x = 20
+    y = 20
+
+    width = 230
+    height = 20
+
+    pygame.draw.rect(
+        screen,
+        BLACK,
+        (
+            x - 2,
+            y - 2,
+            width + 4,
+            height + 4
+        )
+    )
+
+    health_width = int(
+        width
+        * (health / MAX_HEALTH)
+    )
+
+    if health > 50:
+
+        health_color = GREEN
+
+    elif health > 25:
+
+        health_color = YELLOW
+
+    else:
+
+        health_color = RED
+
+    pygame.draw.rect(
+        screen,
+        health_color,
         (
             x,
             y,
@@ -1451,143 +1627,79 @@ def draw_health_bar():
         )
     )
 
-    pygame.draw.rect(
-        screen,
+    draw_text(
+        f"HEALTH {health}",
+        SMALL_FONT,
         WHITE,
-        (
-            x,
-            y,
-            width,
-            height
-        ),
-        2
+        x,
+        y + 24
     )
 
-
-def draw_health_flash():
-
-    global health_flash_timer
-
-    if health_flash_timer <= 0:
-        return
-
-    overlay = pygame.Surface(
-        (WIDTH, HEIGHT),
-        pygame.SRCALPHA
-    )
-
-    alpha = min(
-        120,
-        health_flash_timer * 8
-    )
-
-    overlay.fill(
-        (255, 0, 0, alpha)
-    )
-
-    screen.blit(
-        overlay,
-        (0, 0)
-    )
-
-    health_flash_timer -= 1
-
-
-# ============================================================
-# COLLISION
-# ============================================================
-
-def room_obstacles():
-
-    if room == "hall":
-        return []
-
-    if room == "bedroom":
-        return [bed]
-
-    if room == "basement":
-        return []
-
-    if room == "secret":
-        return []
-
-    return []
-
-
-def move_player(dx, dy):
-
-    player.x += dx
-
-    for obstacle in room_obstacles():
-
-        if player.colliderect(obstacle):
-
-            if dx > 0:
-                player.right = obstacle.left
-
-            elif dx < 0:
-                player.left = obstacle.right
-
-    player.y += dy
-
-    for obstacle in room_obstacles():
-
-        if player.colliderect(obstacle):
-
-            if dy > 0:
-                player.bottom = obstacle.top
-
-            elif dy < 0:
-                player.top = obstacle.bottom
-
-    player.clamp_ip(
-        ROOM_BOUNDS
-    )
-
-
-# ============================================================
-# UI
-# ============================================================
 
 def draw_ui():
-
-    draw_text(
-        f"ROOM: {room.upper()}",
-        20,
-        15,
-        SMALL_FONT
-    )
-
-    draw_text(
-        f"BATTERY: {battery}%",
-        20,
-        38,
-        SMALL_FONT
-    )
-
-    draw_text(
-        f"FEAR: {fear_level}%",
-        20,
-        61,
-        SMALL_FONT,
-        RED
-    )
 
     draw_health_bar()
 
     draw_text(
-        "WASD / ARROWS = MOVE",
+        f"BATTERY {battery}%",
+        SMALL_FONT,
+        WHITE,
         20,
-        610,
-        SMALL_FONT
+        65
     )
 
     draw_text(
-        "E = INTERACT   F = FLASHLIGHT",
-        680,
-        610,
-        SMALL_FONT
+        f"FEAR {fear_level}",
+        SMALL_FONT,
+        WHITE,
+        20,
+        88
     )
+
+    draw_text(
+        f"ROOM: {room.upper()}",
+        SMALL_FONT,
+        GRAY,
+        WIDTH - 190,
+        20
+    )
+
+    draw_text(
+        "WASD / ARROWS = MOVE",
+        SMALL_FONT,
+        GRAY,
+        20,
+        HEIGHT - 65
+    )
+
+    draw_text(
+        "E = INTERACT",
+        SMALL_FONT,
+        GRAY,
+        20,
+        HEIGHT - 43
+    )
+
+    draw_text(
+        "F = FLASHLIGHT",
+        SMALL_FONT,
+        GRAY,
+        20,
+        HEIGHT - 21
+    )
+
+    if (
+        afk_stage == 1
+        and not ending
+    ):
+
+        draw_text(
+            "MOVEMENT IS IMPORTANT.",
+            SMALL_FONT,
+            RED,
+            WIDTH - 250,
+            HEIGHT - 35
+        )
 
 
 def draw_message():
@@ -1595,181 +1707,31 @@ def draw_message():
     if message_timer <= 0:
         return
 
-    box = pygame.Rect(
-        110,
-        555,
-        780,
-        60
+    overlay = pygame.Surface(
+        (WIDTH, 80),
+        pygame.SRCALPHA
     )
 
-    pygame.draw.rect(
-        screen,
-        (5, 5, 8),
-        box
-    )
-
-    pygame.draw.rect(
-        screen,
-        DARK_RED,
-        box,
-        2
-    )
-
-    text = FONT.render(
-        message,
-        True,
-        WHITE
+    overlay.fill(
+        (0, 0, 0, 150)
     )
 
     screen.blit(
-        text,
+        overlay,
         (
-            box.centerx -
-            text.get_width() // 2,
-            box.y + 17
+            0,
+            HEIGHT // 2 - 40
         )
     )
 
-
-def draw_interaction_hint():
-
-    if ending:
-        return
-
-    targets = []
-
-    if room == "hall":
-
-        targets = [
-            (
-                vhs1,
-                not has_vhs1
-            ),
-            (
-                hall_tv,
-                has_vhs1 and not watched_vhs1
-            ),
-            (
-                key1,
-                watched_vhs1 and not has_key1
-            ),
-            (
-                hall_door,
-                True
-            )
-        ]
-
-    elif room == "bedroom":
-
-        targets = [
-            (
-                vhs2,
-                not has_vhs2
-            ),
-            (
-                bedroom_tv,
-                has_vhs2 and not watched_vhs2
-            ),
-            (
-                key2,
-                watched_vhs2 and not has_key2
-            ),
-            (
-                bedroom_basement_door,
-                True
-            ),
-            (
-                bedroom_hall_door,
-                True
-            )
-        ]
-
-    elif room == "basement":
-
-        targets = [
-            (
-                power_switch,
-                not basement_power
-            ),
-            (
-                vhs3,
-                basement_power and not has_vhs3
-            ),
-            (
-                basement_tv,
-                basement_power
-                and has_vhs3
-                and not watched_vhs3
-            ),
-            (
-                secret_door,
-                puzzle_complete
-            ),
-            (
-                basement_exit,
-                True
-            )
-        ]
-
-        for i, fuse in enumerate(
-            fuse_rects
-        ):
-
-            fuse_state = [
-                fuse1,
-                fuse2,
-                fuse3
-            ][i]
-
-            targets.append(
-                (
-                    fuse,
-                    basement_power
-                    and not fuse_state
-                )
-            )
-
-    elif room == "secret":
-
-        targets = [
-            (
-                vhs4,
-                not has_vhs4
-            ),
-            (
-                secret_tv,
-                has_vhs4
-                and not watched_vhs4
-            ),
-            (
-                vhs5,
-                watched_vhs4
-                and not has_vhs5
-            ),
-            (
-                secret_tv,
-                has_vhs5
-                and not watched_vhs5
-            ),
-            (
-                secret_exit,
-                True
-            )
-        ]
-
-    for rect, active in targets:
-
-        if active and interactable(rect):
-
-            draw_text(
-                "E",
-                rect.centerx - 6,
-                rect.top - 25,
-                SMALL_FONT,
-                YELLOW
-            )
-
-            break
+    draw_text(
+        message,
+        FONT,
+        WHITE,
+        WIDTH // 2,
+        HEIGHT // 2,
+        True
+    )
 
 
 # ============================================================
@@ -1782,7 +1744,9 @@ def finish_run():
     global new_game_plus
 
     completed_runs += 1
-    new_game_plus = True
+
+    if completed_runs >= 1:
+        new_game_plus = True
 
     save_progress()
 
@@ -1801,46 +1765,53 @@ def trigger_ending(kind):
     global mary_shaw_ending
     global death_ending
 
-    if ending:
-        return
-
     ending = True
 
-    normal_ending = (
-        kind == "normal"
-    )
+    normal_ending = False
+    bad_ending = False
+    loop_ending = False
+    secret_ending = False
+    true_ending = False
+    memory_ending = False
+    vhs5_ending = False
+    mary_shaw_ending = False
+    death_ending = False
 
-    bad_ending = (
-        kind == "bad"
-    )
+    if kind == "normal":
 
-    loop_ending = (
-        kind == "loop"
-    )
+        normal_ending = True
 
-    secret_ending = (
-        kind == "secret"
-    )
+    elif kind == "bad":
 
-    true_ending = (
-        kind == "true"
-    )
+        bad_ending = True
 
-    memory_ending = (
-        kind == "memory"
-    )
+    elif kind == "loop":
 
-    vhs5_ending = (
-        kind == "vhs5"
-    )
+        loop_ending = True
 
-    mary_shaw_ending = (
-        kind == "mary_shaw"
-    )
+    elif kind == "secret":
 
-    death_ending = (
-        kind == "death"
-    )
+        secret_ending = True
+
+    elif kind == "true":
+
+        true_ending = True
+
+    elif kind == "memory":
+
+        memory_ending = True
+
+    elif kind == "vhs5":
+
+        vhs5_ending = True
+
+    elif kind == "mary_shaw":
+
+        mary_shaw_ending = True
+
+    elif kind == "death":
+
+        death_ending = True
 
     finish_run()
 
@@ -1852,7 +1823,7 @@ def choose_basement_ending():
         1000
     )
 
-    if has_vhs5 and watched_vhs5:
+    if watched_vhs5:
 
         trigger_ending(
             "vhs5"
@@ -1900,291 +1871,312 @@ def choose_basement_ending():
 
 def show_ending():
 
-    screen.fill(
-        BLACK
-    )
-
-    # ========================================================
-    # NEW: YOU DIED
-    # ========================================================
+    screen.fill(BLACK)
 
     if death_ending:
 
-        # Dark red background
-        pygame.draw.rect(
-            screen,
-            (18, 2, 5),
-            (0, 0, WIDTH, HEIGHT)
-        )
-
-        # Subtle red pulses
-        pulse = random.randint(
-            0,
-            25
-        )
-
-        overlay = pygame.Surface(
-            (WIDTH, HEIGHT),
-            pygame.SRCALPHA
-        )
-
-        overlay.fill(
-            (120, 0, 10, pulse)
-        )
-
-        screen.blit(
-            overlay,
-            (0, 0)
-        )
-
-        center_text(
+        draw_text(
             "YOU DIED",
-            145,
             BIG_FONT,
-            RED
+            RED,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
+        draw_text(
             "THE HOUSE TOOK YOU.",
+            FONT,
+            WHITE,
+            WIDTH // 2,
             250,
-            FONT,
-            WHITE
+            True
         )
 
-        center_text(
+        draw_text(
             "YOU COULDN'T ESCAPE.",
-            305,
             FONT,
-            GRAY
+            GRAY,
+            WIDTH // 2,
+            290,
+            True
         )
 
-        center_text(
+        draw_text(
             "THE RECORDING CONTINUES.",
-            360,
             FONT,
-            RED
+            GRAY,
+            WIDTH // 2,
+            330,
+            True
         )
 
-        center_text(
+        draw_text(
             "ENDING: DEATH",
-            445,
-            SMALL_FONT,
-            YELLOW
-        )
-
-        center_text(
-            "PRESS R TO PLAY AGAIN",
-            540,
             FONT,
-            WHITE
+            RED,
+            WIDTH // 2,
+            400,
+            True
         )
 
-        return
+    elif mary_shaw_ending:
 
-    # ========================================================
-    # MARY SHAW
-    # ========================================================
-
-    if mary_shaw_ending:
-
-        center_text(
-            "YOU GOT TO",
-            100,
-            FONT,
-            RED
-        )
-
-        center_text(
-            "MARY SHAW'S HOUSE",
-            155,
+        draw_text(
+            "THE HOUSE REMEMBERS.",
             BIG_FONT,
-            RED
+            RED,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "THE HOUSE WAS NEVER THE END.",
-            270
-        )
-
-        center_text(
-            "IT WAS THE BEGINNING.",
-            325
-        )
-
-        center_text(
-            "THE RECORDING WAS MADE HERE.",
-            380,
+        draw_text(
+            "YOU STAYED TOO LONG.",
             FONT,
-            RED
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
         )
 
-        center_text(
-            "VERY HARD ENDING",
-            450,
-            SMALL_FONT,
-            YELLOW
-        )
-
-        center_text(
-            "YOU FOUND WHAT WAS NEVER MEANT TO BE FOUND.",
-            490,
-            SMALL_FONT
-        )
-
-    elif secret_ending:
-
-        center_text(
-            "THE HOUSE BURNS DOWN.",
-            160,
-            BIG_FONT,
-            RED
-        )
-
-        center_text(
-            "THE RECORDING SURVIVED.",
-            250
-        )
-
-        center_text(
-            "YOU DIDN'T.",
-            310,
+        draw_text(
+            "SHE WAS ALREADY THERE.",
             FONT,
-            RED
+            GRAY,
+            WIDTH // 2,
+            290,
+            True
+        )
+
+        draw_text(
+            "ENDING: MARY SHAW",
+            FONT,
+            RED,
+            WIDTH // 2,
+            400,
+            True
         )
 
     elif vhs5_ending:
 
-        center_text(
-            "THE RECORDING NEVER ENDS.",
-            160,
+        draw_text(
+            "THE FIFTH RECORDING",
             BIG_FONT,
-            RED
+            RED,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "YOU FOUND THE ORIGINAL TAPE.",
-            260
-        )
-
-        center_text(
-            "NOW IT HAS YOUR FACE.",
-            320,
+        draw_text(
+            "YOU FOUND WHAT WAS NEVER MEANT TO BE FOUND.",
             FONT,
-            RED
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
+        )
+
+        draw_text(
+            "ENDING: VHS 5",
+            FONT,
+            RED,
+            WIDTH // 2,
+            400,
+            True
+        )
+
+    elif secret_ending:
+
+        draw_text(
+            "THE TRUTH",
+            BIG_FONT,
+            RED,
+            WIDTH // 2,
+            170,
+            True
+        )
+
+        draw_text(
+            "THE HOUSE WAS RECORDING YOU.",
+            FONT,
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
+        )
+
+        draw_text(
+            "ENDING: SECRET",
+            FONT,
+            RED,
+            WIDTH // 2,
+            400,
+            True
         )
 
     elif memory_ending:
 
-        center_text(
-            "THE HOUSE REMEMBERS.",
-            160,
+        draw_text(
+            "YOU REMEMBER.",
             BIG_FONT,
-            RED
+            RED,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "YOU ESCAPED LAST TIME.",
-            250
+        draw_text(
+            "YOU HAVE BEEN HERE BEFORE.",
+            FONT,
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
         )
 
-        center_text(
-            "THIS TIME, IT FOLLOWED.",
-            310
+        draw_text(
+            "ENDING: MEMORY",
+            FONT,
+            RED,
+            WIDTH // 2,
+            400,
+            True
         )
 
     elif true_ending:
 
-        center_text(
-            "TRUE ENDING",
-            160,
+        draw_text(
+            "THE RECORDING ENDS.",
             BIG_FONT,
-            RED
+            WHITE,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "THE RECORDING WAS NEVER THE TAPE.",
-            250
+        draw_text(
+            "YOU MADE IT OUT.",
+            FONT,
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
         )
 
-        center_text(
-            "IT WAS THE HOUSE.",
-            310
-        )
-
-        center_text(
-            "AND NOW IT KNOWS YOU.",
-            370
+        draw_text(
+            "ENDING: TRUE",
+            FONT,
+            GREEN,
+            WIDTH // 2,
+            400,
+            True
         )
 
     elif loop_ending:
 
-        center_text(
-            "ENDING 3",
-            160,
-            BIG_FONT
-        )
-
-        center_text(
+        draw_text(
             "YOU ESCAPED.",
-            250
+            BIG_FONT,
+            WHITE,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "YOU OPENED YOUR FRONT DOOR.",
-            310
+        draw_text(
+            "BUT THE RECORDING STARTS AGAIN.",
+            FONT,
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
         )
 
-        center_text(
-            "THE HOUSE WAS ON THE OTHER SIDE.",
-            370
+        draw_text(
+            "ENDING: LOOP",
+            FONT,
+            YELLOW,
+            WIDTH // 2,
+            400,
+            True
         )
 
     elif bad_ending:
 
-        center_text(
-            "ENDING 2",
-            160,
-            BIG_FONT
+        draw_text(
+            "YOU LEFT THE HOUSE.",
+            BIG_FONT,
+            WHITE,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "YOU ESCAPED THE HOUSE.",
-            250
-        )
-
-        center_text(
-            "BUT SOMETHING FOLLOWED YOU.",
-            310
-        )
-
-        center_text(
-            "THE RECORDING NEVER ENDS.",
-            370,
+        draw_text(
+            "BUT SOMETHING CAME WITH YOU.",
             FONT,
-            RED
+            WHITE,
+            WIDTH // 2,
+            250,
+            True
+        )
+
+        draw_text(
+            "ENDING: BAD",
+            FONT,
+            RED,
+            WIDTH // 2,
+            400,
+            True
         )
 
     else:
 
-        center_text(
-            "ENDING 1",
-            160,
-            BIG_FONT
-        )
-
-        center_text(
+        draw_text(
             "YOU ESCAPED.",
-            260
+            BIG_FONT,
+            WHITE,
+            WIDTH // 2,
+            170,
+            True
         )
 
-        center_text(
-            "THE TELEVISION IS STILL PLAYING.",
-            320
+        draw_text(
+            "THE HOUSE GOES QUIET.",
+            FONT,
+            GRAY,
+            WIDTH // 2,
+            250,
+            True
         )
 
-    center_text(
+        draw_text(
+            "ENDING: NORMAL",
+            FONT,
+            WHITE,
+            WIDTH // 2,
+            400,
+            True
+        )
+
+    draw_text(
+        f"COMPLETED RUNS: {completed_runs}",
+        SMALL_FONT,
+        GRAY,
+        WIDTH // 2,
+        470,
+        True
+    )
+
+    draw_text(
         "PRESS R TO PLAY AGAIN",
-        540
+        SMALL_FONT,
+        WHITE,
+        WIDTH // 2,
+        530,
+        True
     )
 
 
@@ -2194,32 +2186,33 @@ def show_ending():
 
 def handle_interaction():
 
-    global has_vhs1
-    global watched_vhs1
-    global has_key1
+    global room
 
+    global has_vhs1
     global has_vhs2
+    global has_vhs3
+    global has_vhs4
+    global has_vhs5
+
+    global watched_vhs1
     global watched_vhs2
+    global watched_vhs3
+    global watched_vhs4
+    global watched_vhs5
+
+    global has_key1
     global has_key2
 
     global basement_power
-    global has_vhs3
-    global watched_vhs3
 
     global fuse1
     global fuse2
     global fuse3
 
-    global has_vhs4
-    global watched_vhs4
-
-    global has_vhs5
-    global watched_vhs5
+    global puzzle_complete
 
     global fear_level
-    global flash_timer
-    global screen_shake
-    global room
+    global tv_glitch_timer
 
     # ========================================================
     # HALL
@@ -2235,58 +2228,81 @@ def handle_interaction():
             has_vhs1 = True
 
             show_message(
-                "YOU FOUND VHS 1."
+                "VHS TAPE 1 FOUND.",
+                120
             )
 
-        elif (
-            has_vhs1
-            and not watched_vhs1
-            and interactable(hall_tv)
-        ):
+            register_player_activity()
 
-            watched_vhs1 = True
+            return
 
-            show_message(
-                "THE SCREEN SHOWS YOU."
-            )
+        if interactable(hall_tv):
 
-            spawn_creature(
-                760,
-                250
-            )
+            if (
+                has_vhs1
+                and not watched_vhs1
+            ):
 
-            flash_timer = 8
+                watched_vhs1 = True
 
-        elif (
-            watched_vhs1
-            and not has_key1
+                show_message(
+                    "THE RECORDING SHOWS THE HALL.",
+                    150
+                )
+
+                tv_glitch_timer = 70
+
+                fear_level = min(
+                    100,
+                    fear_level + 8
+                )
+
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx + 180,
+                        player.centery
+                    )
+
+                register_player_activity()
+
+                return
+
+        if (
+            not has_key1
             and interactable(key1)
         ):
 
             has_key1 = True
 
             show_message(
-                "YOU FOUND A STRANGE KEY."
+                "BEDROOM KEY FOUND.",
+                120
             )
 
-        elif interactable(hall_door):
+            register_player_activity()
+
+            return
+
+        if interactable(hall_door):
 
             if has_key1:
 
                 room = "bedroom"
 
-                player.x = 100
+                player.x = 70
                 player.y = 300
 
-                show_message(
-                    "THE BEDROOM DOOR OPENS."
-                )
+                register_player_activity()
 
             else:
 
                 show_message(
-                    "THE DOOR IS LOCKED."
+                    "THE DOOR IS LOCKED.",
+                    100
                 )
+
+            return
 
     # ========================================================
     # BEDROOM
@@ -2302,67 +2318,92 @@ def handle_interaction():
             has_vhs2 = True
 
             show_message(
-                "ANOTHER VHS..."
+                "VHS TAPE 2 FOUND.",
+                120
             )
 
-        elif (
-            has_vhs2
-            and not watched_vhs2
-            and interactable(bedroom_tv)
-        ):
+            register_player_activity()
 
-            watched_vhs2 = True
+            return
 
-            show_message(
-                "WHY DID YOU WATCH IT?"
-            )
+        if interactable(bedroom_tv):
 
-            spawn_creature(
-                700,
-                400
-            )
+            if (
+                has_vhs2
+                and not watched_vhs2
+            ):
 
-        elif (
-            watched_vhs2
-            and not has_key2
+                watched_vhs2 = True
+
+                show_message(
+                    "SOMETHING IS WRONG WITH THIS RECORDING.",
+                    160
+                )
+
+                tv_glitch_timer = 80
+
+                fear_level = min(
+                    100,
+                    fear_level + 10
+                )
+
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx + 200,
+                        player.centery
+                    )
+
+                register_player_activity()
+
+                return
+
+        if (
+            not has_key2
             and interactable(key2)
         ):
 
             has_key2 = True
 
             show_message(
-                "THE KEY IS FREEZING COLD."
+                "BASEMENT KEY FOUND.",
+                120
             )
 
-        elif interactable(
-            bedroom_basement_door
-        ):
+            register_player_activity()
+
+            return
+
+        if interactable(bedroom_hall_door):
+
+            room = "hall"
+
+            player.x = 880
+            player.y = 300
+
+            register_player_activity()
+
+            return
+
+        if interactable(bedroom_basement_door):
 
             if has_key2:
 
                 room = "basement"
 
-                player.x = 120
-                player.y = 500
+                player.x = 70
+                player.y = 520
 
-                show_message(
-                    "SOMETHING IS WAITING DOWNSTAIRS."
-                )
+                register_player_activity()
 
             else:
 
                 show_message(
-                    "YOU NEED ANOTHER KEY."
+                    "THE DOOR IS LOCKED.",
+                    100
                 )
 
-        elif interactable(
-            bedroom_hall_door
-        ):
-
-            room = "hall"
-
-            player.x = 850
-            player.y = 300
+            return
 
     # ========================================================
     # BASEMENT
@@ -2370,129 +2411,229 @@ def handle_interaction():
 
     elif room == "basement":
 
+        if interactable(power_switch):
+
+            if not basement_power:
+
+                basement_power = True
+
+                show_message(
+                    "THE POWER IS BACK.",
+                    140
+                )
+
+                fear_level = min(
+                    100,
+                    fear_level + 5
+                )
+
+            else:
+
+                show_message(
+                    "THE POWER IS ALREADY ON.",
+                    100
+                )
+
+            register_player_activity()
+
+            return
+
         if (
-            not basement_power
-            and interactable(power_switch)
-        ):
-
-            basement_power = True
-
-            show_message(
-                "THE POWER CAME BACK ON."
-            )
-
-        elif (
-            basement_power
-            and not has_vhs3
+            not has_vhs3
             and interactable(vhs3)
         ):
 
             has_vhs3 = True
 
             show_message(
-                "VHS 3. THE TV IS WAITING."
+                "VHS TAPE 3 FOUND.",
+                120
             )
 
-            spawn_creature(
-                500,
-                350
-            )
+            register_player_activity()
 
-        elif (
-            basement_power
-            and has_vhs3
-            and not watched_vhs3
-            and interactable(basement_tv)
-        ):
+            return
 
-            watched_vhs3 = True
+        if interactable(basement_tv):
 
-            show_message(
-                "THE RECORDING KNOWS YOU ARE HERE."
-            )
+            if (
+                has_vhs3
+                and not watched_vhs3
+            ):
 
-            spawn_creature(
-                800,
-                300
-            )
+                if not basement_power:
 
-            flash_timer = 15
-            screen_shake = 10
+                    show_message(
+                        "THE TV HAS NO POWER.",
+                        110
+                    )
 
-        elif (
-            basement_power
-            and not fuse1
-            and interactable(fuse_rects[0])
-        ):
+                else:
 
-            fuse1 = True
+                    watched_vhs3 = True
 
-            show_message(
-                "FUSE 1 INSTALLED."
-            )
+                    show_message(
+                        "THE BASEMENT WAS ON THE TAPE.",
+                        150
+                    )
 
-        elif (
-            basement_power
-            and not fuse2
-            and interactable(fuse_rects[1])
-        ):
+                    tv_glitch_timer = 80
 
-            fuse2 = True
+                    fear_level = min(
+                        100,
+                        fear_level + 10
+                    )
 
-            show_message(
-                "FUSE 2 INSTALLED."
-            )
+                register_player_activity()
 
-        elif (
-            basement_power
-            and not fuse3
-            and interactable(fuse_rects[2])
-        ):
+                return
 
-            fuse3 = True
+        # ----------------------------------------------------
+        # FUSE 1
+        # ----------------------------------------------------
 
-            show_message(
-                "FUSE 3 INSTALLED."
-            )
+        if interactable(fuse_rects[0]):
 
-        elif (
-            puzzle_complete
-            and interactable(secret_door)
-        ):
+            if (
+                basement_power
+                and not fuse1
+            ):
 
-            room = "secret"
-
-            player.x = 100
-            player.y = 300
-
-            show_message(
-                "YOU FOUND A ROOM THAT WASN'T ON THE MAP."
-            )
-
-            fear_level = min(
-                100,
-                fear_level + 8
-            )
-
-        elif interactable(
-            basement_exit
-        ):
-
-            if not watched_vhs3:
+                fuse1 = True
 
                 show_message(
-                    "THE RECORDING ISN'T FINISHED."
+                    "FUSE 1 INSTALLED.",
+                    100
+                )
+
+            else:
+
+                show_message(
+                    "NOTHING HAPPENS.",
+                    80
+                )
+
+            register_player_activity()
+
+            return
+
+        # ----------------------------------------------------
+        # FUSE 2
+        # ----------------------------------------------------
+
+        if interactable(fuse_rects[1]):
+
+            if (
+                basement_power
+                and not fuse2
+            ):
+
+                fuse2 = True
+
+                show_message(
+                    "FUSE 2 INSTALLED.",
+                    100
+                )
+
+            else:
+
+                show_message(
+                    "NOTHING HAPPENS.",
+                    80
+                )
+
+            register_player_activity()
+
+            return
+
+        # ----------------------------------------------------
+        # FUSE 3
+        # ----------------------------------------------------
+
+        if interactable(fuse_rects[2]):
+
+            if (
+                basement_power
+                and not fuse3
+            ):
+
+                fuse3 = True
+
+                show_message(
+                    "FUSE 3 INSTALLED.",
+                    100
+                )
+
+            else:
+
+                show_message(
+                    "NOTHING HAPPENS.",
+                    80
+                )
+
+            register_player_activity()
+
+            return
+
+        # ----------------------------------------------------
+        # SECRET DOOR
+        # ----------------------------------------------------
+
+        if interactable(secret_door):
+
+            if puzzle_complete:
+
+                room = "secret"
+
+                player.x = 70
+                player.y = 300
+
+                show_message(
+                    "THE SECRET ROOM.",
+                    140
+                )
+
+            else:
+
+                show_message(
+                    "THE DOOR WILL NOT OPEN.",
+                    100
+                )
+
+            register_player_activity()
+
+            return
+
+        # ----------------------------------------------------
+        # BASEMENT EXIT
+        # ----------------------------------------------------
+
+        if interactable(basement_exit):
+
+            if (
+                watched_vhs3
+                and puzzle_complete
+            ):
+
+                choose_basement_ending()
+
+            elif not watched_vhs3:
+
+                show_message(
+                    "THE RECORDING IS INCOMPLETE.",
+                    120
                 )
 
             elif not puzzle_complete:
 
                 show_message(
-                    "SOMETHING IS STILL MISSING."
+                    "THE EXIT HAS NO POWER.",
+                    120
                 )
 
-            else:
+            register_player_activity()
 
-                choose_basement_ending()
+            return
 
     # ========================================================
     # SECRET ROOM
@@ -2508,83 +2649,109 @@ def handle_interaction():
             has_vhs4 = True
 
             show_message(
-                "YOU FOUND THE TAPE THAT WASN'T SUPPOSED TO EXIST."
+                "VHS TAPE 4 FOUND.",
+                120
             )
 
-            fear_level = min(
-                100,
-                fear_level + 5
-            )
+            register_player_activity()
 
-            spawn_creature(
-                650,
-                300
-            )
+            return
 
-        elif (
-            has_vhs4
-            and not watched_vhs4
-            and interactable(secret_tv)
-        ):
+        if interactable(secret_tv):
 
-            watched_vhs4 = True
+            if (
+                has_vhs4
+                and not watched_vhs4
+            ):
 
-            show_message(
-                "THIS IS NOT A RECORDING OF THE HOUSE."
-            )
+                watched_vhs4 = True
 
-            fear_level = min(
-                100,
-                fear_level + 10
-            )
+                fear_level = min(
+                    100,
+                    fear_level + 20
+                )
 
-            flash_timer = 20
+                tv_glitch_timer = 100
 
-            spawn_creature(
-                750,
-                350
-            )
+                show_message(
+                    "YOU CAME BACK.",
+                    180
+                )
 
-        elif (
-            watched_vhs4
-            and not has_vhs5
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx + 170,
+                        player.centery
+                    )
+
+                register_player_activity()
+
+                return
+
+            if (
+                has_vhs5
+                and not watched_vhs5
+            ):
+
+                watched_vhs5 = True
+
+                fear_level = 100
+
+                tv_glitch_timer = 140
+
+                show_message(
+                    "THIS WAS NEVER FOR YOU.",
+                    180
+                )
+
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx + 160,
+                        player.centery
+                    )
+
+                register_player_activity()
+
+                return
+
+        # ----------------------------------------------------
+        # VHS 5
+        # ----------------------------------------------------
+
+        if (
+            not has_vhs5
             and interactable(vhs5)
         ):
 
-            has_vhs5 = True
+            if watched_vhs4:
 
-            show_message(
-                "THAT TAPE WAS HIDDEN BEHIND THE WALL."
-            )
+                has_vhs5 = True
 
-        elif (
-            has_vhs5
-            and not watched_vhs5
-            and interactable(secret_tv)
-        ):
+                show_message(
+                    "VHS TAPE 5 FOUND.",
+                    150
+                )
 
-            watched_vhs5 = True
+            else:
 
-            show_message(
-                "YOU WERE NEVER SUPPOSED TO SEE THIS."
-            )
+                show_message(
+                    "YOU DON'T KNOW WHAT THIS IS.",
+                    120
+                )
 
-            flash_timer = 25
-            screen_shake = 12
+            register_player_activity()
 
-            spawn_creature(
-                600,
-                300
-            )
+            return
 
-        # ====================================================
-        # SECRET ROOM EXIT
-        # ====================================================
+        # ----------------------------------------------------
+        # SECRET EXIT
+        # ----------------------------------------------------
 
-        elif interactable(
-            secret_exit
-        ):
+        if interactable(secret_exit):
 
+            # Extremely difficult hidden ending.
             if (
                 watched_vhs4
                 and not has_vhs5
@@ -2611,411 +2778,13 @@ def handle_interaction():
             else:
 
                 show_message(
-                    "THE TV IS WAITING."
+                    "YOU ARE NOT READY TO LEAVE.",
+                    120
                 )
 
+            register_player_activity()
 
-# ============================================================
-# DRAW ROOM
-# ============================================================
-
-def draw_room():
-
-    # ========================================================
-    # HALL
-    # ========================================================
-
-    if room == "hall":
-
-        draw_walls()
-
-        draw_tv(
-            hall_tv,
-            creepy=watched_vhs1,
-            memory=new_game_plus,
-            creature=(
-                creature_visible
-                and random.randint(1, 5) == 1
-            )
-        )
-
-        if not has_vhs1:
-            draw_vhs(
-                vhs1,
-                1
-            )
-
-        if watched_vhs1 and not has_key1:
-            draw_key(key1)
-
-        pygame.draw.rect(
-            screen,
-            (70, 50, 40),
-            hall_door
-        )
-
-        draw_text(
-            "BEDROOM",
-            850,
-            225,
-            SMALL_FONT
-        )
-
-    # ========================================================
-    # BEDROOM
-    # ========================================================
-
-    elif room == "bedroom":
-
-        draw_walls()
-
-        pygame.draw.rect(
-            screen,
-            (50, 50, 65),
-            bed
-        )
-
-        pygame.draw.rect(
-            screen,
-            (80, 80, 100),
-            (
-                330,
-                320,
-                240,
-                60
-            )
-        )
-
-        draw_tv(
-            bedroom_tv,
-            creepy=watched_vhs2,
-            memory=new_game_plus,
-            creature=(
-                creature_visible
-                and random.randint(1, 5) == 1
-            )
-        )
-
-        if not has_vhs2:
-            draw_vhs(
-                vhs2,
-                2
-            )
-
-        if watched_vhs2 and not has_key2:
-            draw_key(key2)
-
-        pygame.draw.rect(
-            screen,
-            (45, 30, 30),
-            bedroom_basement_door
-        )
-
-        draw_text(
-            "BASEMENT",
-            850,
-            525,
-            SMALL_FONT
-        )
-
-        pygame.draw.rect(
-            screen,
-            (45, 30, 30),
-            bedroom_hall_door
-        )
-
-        draw_text(
-            "HALL",
-            45,
-            225,
-            SMALL_FONT
-        )
-
-    # ========================================================
-    # BASEMENT
-    # ========================================================
-
-    elif room == "basement":
-
-        draw_walls()
-
-        pygame.draw.rect(
-            screen,
-            (10, 10, 14),
-            (
-                55,
-                55,
-                890,
-                500
-            )
-        )
-
-        if basement_power:
-
-            draw_tv(
-                basement_tv,
-                creepy=watched_vhs3,
-                memory=(
-                    new_game_plus
-                    and not watched_vhs3
-                ),
-                creature=(
-                    creature_visible
-                    and random.randint(1, 4) == 1
-                )
-            )
-
-            if watched_vhs3:
-
-                draw_text(
-                    "THE RECORDING IS WATCHING YOU",
-                    235,
-                    255,
-                    SMALL_FONT,
-                    RED
-                )
-
-            else:
-
-                draw_text(
-                    "INSERT VHS 3",
-                    335,
-                    255,
-                    SMALL_FONT
-                )
-
-        else:
-
-            pygame.draw.rect(
-                screen,
-                (15, 15, 18),
-                basement_tv
-            )
-
-            pygame.draw.rect(
-                screen,
-                GRAY,
-                basement_tv,
-                5
-            )
-
-        pygame.draw.rect(
-            screen,
-            GREEN if basement_power else GRAY,
-            power_switch
-        )
-
-        draw_text(
-            "POWER",
-            105,
-            145,
-            SMALL_FONT
-        )
-
-        if (
-            basement_power
-            and not has_vhs3
-        ):
-
-            draw_vhs(
-                vhs3,
-                3
-            )
-
-        if basement_power:
-
-            states = [
-                fuse1,
-                fuse2,
-                fuse3
-            ]
-
-            for i in range(3):
-
-                if states[i]:
-
-                    pygame.draw.rect(
-                        screen,
-                        GREEN,
-                        fuse_rects[i]
-                    )
-
-                else:
-
-                    draw_fuse(
-                        fuse_rects[i],
-                        i + 1
-                    )
-
-            draw_text(
-                "FUSES",
-                610,
-                125,
-                SMALL_FONT
-            )
-
-        pygame.draw.rect(
-            screen,
-            (55, 35, 35),
-            basement_exit
-        )
-
-        draw_text(
-            "EXIT",
-            478,
-            65,
-            SMALL_FONT
-        )
-
-        # ====================================================
-        # SECRET DOOR
-        # ====================================================
-
-        if puzzle_complete:
-
-            pygame.draw.rect(
-                screen,
-                (70, 15, 20),
-                secret_door
-            )
-
-            pygame.draw.rect(
-                screen,
-                (150, 25, 30),
-                secret_door,
-                3
-            )
-
-            pygame.draw.circle(
-                screen,
-                (180, 170, 80),
-                (
-                    secret_door.right - 15,
-                    secret_door.centery
-                ),
-                5
-            )
-
-            draw_text(
-                "SECRET",
-                secret_door.x - 3,
-                secret_door.y - 28,
-                SMALL_FONT,
-                RED
-            )
-
-        else:
-
-            pygame.draw.rect(
-                screen,
-                (35, 12, 15),
-                secret_door,
-                2
-            )
-
-    # ========================================================
-    # SECRET ROOM
-    # ========================================================
-
-    elif room == "secret":
-
-        draw_walls()
-
-        pygame.draw.rect(
-            screen,
-            (12, 6, 15),
-            (
-                55,
-                55,
-                890,
-                500
-            )
-        )
-
-        draw_tv(
-            secret_tv,
-            creepy=watched_vhs4,
-            memory=True,
-            creature=(
-                creature_visible
-                and random.randint(1, 3) == 1
-            )
-        )
-
-        if not has_vhs4:
-
-            draw_vhs(
-                vhs4,
-                4
-            )
-
-        if watched_vhs4 and not has_vhs5:
-
-            draw_vhs(
-                vhs5,
-                5
-            )
-
-            draw_text(
-                "SOMETHING IS HERE",
-                690,
-                250,
-                SMALL_FONT,
-                RED
-            )
-
-        pygame.draw.rect(
-            screen,
-            (55, 35, 35),
-            secret_exit
-        )
-
-        draw_text(
-            "EXIT",
-            478,
-            65,
-            SMALL_FONT
-        )
-
-    # ========================================================
-    # CREATURE
-    # ========================================================
-
-    if creature_visible:
-
-        draw_creature()
-
-    # ========================================================
-    # PLAYER
-    # ========================================================
-
-    pygame.draw.rect(
-        screen,
-        (180, 180, 185),
-        player
-    )
-
-    pygame.draw.rect(
-        screen,
-        (30, 30, 35),
-        (
-            player.x + 7,
-            player.y + 8,
-            5,
-            5
-        )
-    )
-
-    pygame.draw.rect(
-        screen,
-        (30, 30, 35),
-        (
-            player.x + 20,
-            player.y + 8,
-            5,
-            5
-        )
-    )
+            return
 
 
 # ============================================================
@@ -3025,43 +2794,6 @@ def draw_room():
 def reset_game():
 
     global room
-
-    global creature_visible
-    global creature_state
-    global creature_timer
-    global creature_x
-    global creature_y
-
-    global flash_timer
-    global screen_shake
-
-    global message
-    global message_timer
-    global fear_level
-
-    global health
-    global health_flash_timer
-    global health_shake_timer
-
-    global heartbeat_timer
-
-    global shadow_timer
-    global shadow_x
-    global shadow_y
-    global shadow_visible
-
-    global house_event_timer
-
-    global look_away_timer
-    global look_event_count
-
-    global battery
-    global flashlight_on
-    global battery_timer
-    global flash_flicker_timer
-
-    global random_event_timer
-    global tv_glitch_timer
 
     global ending
 
@@ -3075,66 +2807,58 @@ def reset_game():
     global mary_shaw_ending
     global death_ending
 
+    global player
+
+    global creature_visible
+    global creature_x
+    global creature_y
+    global creature_state
+    global creature_timer
+    global creature_chase_timer
+
+    global afk_timer
+    global afk_stage
+    global afk_hunt_active
+    global afk_hunt_timer
+
+    global last_player_x
+    global last_player_y
+    global player_activity
+
+    global flash_timer
+    global screen_shake
+
+    global message
+    global message_timer
+
+    global fear_level
+
+    global health
+    global health_flash_timer
+    global health_shake_timer
+
+    global battery
+    global flashlight_on
+    global battery_timer
+    global flash_flicker_timer
+
+    global random_event_timer
+    global tv_glitch_timer
+    global heartbeat_timer
+
+    global shadow_timer
+    global shadow_visible
+
+    global house_event_timer
+
+    global look_away_timer
+    global look_event_count
+
     room = "hall"
 
     player.x = 480
     player.y = 520
 
-    reset_items()
-
-    # Creature
-    creature_visible = False
-    creature_state = "idle"
-    creature_timer = 0
-    creature_x = 800
-    creature_y = 300
-
-    # Screen effects
-    flash_timer = 0
-    screen_shake = 0
-
-    # Messages
-    message = ""
-    message_timer = 0
-
-    # Fear
-    fear_level = min(
-        100,
-        10 + completed_runs * 5
-    )
-
-    # Health
-    health = MAX_HEALTH
-    health_flash_timer = 0
-    health_shake_timer = 0
-
-    # Heartbeat
-    heartbeat_timer = 0
-
-    # Shadows
-    shadow_timer = 0
-    shadow_x = 0
-    shadow_y = 0
-    shadow_visible = False
-
-    # House
-    house_event_timer = 0
-
-    # Look-away system
-    look_away_timer = 0
-    look_event_count = 0
-
-    # Flashlight
-    battery = 100
-    flashlight_on = True
-    battery_timer = 0
-    flash_flicker_timer = 0
-
-    # Horror events
-    random_event_timer = 0
-    tv_glitch_timer = 0
-
-    # Endings
     ending = False
 
     normal_ending = False
@@ -3145,9 +2869,89 @@ def reset_game():
     memory_ending = False
     vhs5_ending = False
     mary_shaw_ending = False
-
-    # NEW
     death_ending = False
+
+    creature_visible = False
+
+    creature_x = 800
+    creature_y = 300
+
+    creature_state = "idle"
+
+    creature_timer = 0
+    creature_chase_timer = 0
+
+    # --------------------------------------------------------
+    # AFK RESET
+    # --------------------------------------------------------
+
+    afk_timer = 0
+    afk_stage = 0
+
+    afk_hunt_active = False
+    afk_hunt_timer = 0
+
+    last_player_x = player.x
+    last_player_y = player.y
+
+    player_activity = False
+
+    # --------------------------------------------------------
+    # HORROR RESET
+    # --------------------------------------------------------
+
+    flash_timer = 0
+    screen_shake = 0
+
+    message = ""
+    message_timer = 0
+
+    fear_level = min(
+        100,
+        10 + completed_runs * 5
+    )
+
+    # --------------------------------------------------------
+    # HEALTH RESET
+    # --------------------------------------------------------
+
+    health = MAX_HEALTH
+
+    health_flash_timer = 0
+    health_shake_timer = 0
+
+    # --------------------------------------------------------
+    # FLASHLIGHT RESET
+    # --------------------------------------------------------
+
+    battery = 100
+    flashlight_on = True
+
+    battery_timer = 0
+    flash_flicker_timer = 0
+
+    # --------------------------------------------------------
+    # TIMER RESET
+    # --------------------------------------------------------
+
+    random_event_timer = 0
+    tv_glitch_timer = 0
+    heartbeat_timer = 0
+
+    shadow_timer = 0
+    shadow_visible = False
+
+    house_event_timer = 0
+
+    look_away_timer = 0
+    look_event_count = 0
+
+    reset_items()
+
+    show_message(
+        "THE HOUSE REMEMBERS.",
+        180
+    )
 
 
 # ============================================================
@@ -3174,40 +2978,50 @@ while running:
 
         elif event.type == pygame.KEYDOWN:
 
-            if (
-                ending
-                and event.key == pygame.K_r
-            ):
+            # ------------------------------------------------
+            # ESCAPE
+            # ------------------------------------------------
 
-                reset_game()
+            if event.key == pygame.K_ESCAPE:
 
-                if new_game_plus:
+                running = False
 
-                    show_message(
-                        "YOU CAME BACK.",
-                        300
-                    )
+                continue
 
-            elif (
-                not ending
-                and event.key == pygame.K_f
-            ):
+            # ------------------------------------------------
+            # ENDING RESTART
+            # ------------------------------------------------
+
+            if ending:
+
+                if event.key == pygame.K_r:
+
+                    reset_game()
+
+                continue
+
+            # ------------------------------------------------
+            # FLASHLIGHT
+            # ------------------------------------------------
+
+            if event.key == pygame.K_f:
 
                 if battery > 0:
 
-                    flashlight_on = (
-                        not flashlight_on
-                    )
+                    flashlight_on = not flashlight_on
 
-            elif (
-                not ending
-                and event.key == pygame.K_e
-            ):
+                    register_player_activity()
+
+            # ------------------------------------------------
+            # INTERACTION
+            # ------------------------------------------------
+
+            elif event.key == pygame.K_e:
 
                 handle_interaction()
 
     # ========================================================
-    # MOVEMENT
+    # GAME UPDATE
     # ========================================================
 
     if not ending:
@@ -3217,19 +3031,9 @@ while running:
         dx = 0
         dy = 0
 
-        if (
-            keys[pygame.K_a]
-            or keys[pygame.K_LEFT]
-        ):
-
-            dx -= SPEED
-
-        if (
-            keys[pygame.K_d]
-            or keys[pygame.K_RIGHT]
-        ):
-
-            dx += SPEED
+        # ----------------------------------------------------
+        # MOVEMENT
+        # ----------------------------------------------------
 
         if (
             keys[pygame.K_w]
@@ -3245,177 +3049,294 @@ while running:
 
             dy += SPEED
 
+        if (
+            keys[pygame.K_a]
+            or keys[pygame.K_LEFT]
+        ):
+
+            dx -= SPEED
+
+        if (
+            keys[pygame.K_d]
+            or keys[pygame.K_RIGHT]
+        ):
+
+            dx += SPEED
+
+        # Normalize diagonal movement.
         if dx != 0 and dy != 0:
 
-            factor = 1 / math.sqrt(2)
+            factor = 0.7071
 
-            dx *= factor
-            dy *= factor
+            dx = int(
+                dx * factor
+            )
 
-        move_player(
-            round(dx),
-            round(dy)
+            dy = int(
+                dy * factor
+            )
+
+        # ----------------------------------------------------
+        # PLAYER MOVEMENT
+        # ----------------------------------------------------
+
+        old_x = player.x
+        old_y = player.y
+
+        player.x += dx
+
+        # Bedroom bed collision.
+        if (
+            room == "bedroom"
+            and player.colliderect(bed)
+        ):
+
+            player.x = old_x
+
+        player.y += dy
+
+        if (
+            room == "bedroom"
+            and player.colliderect(bed)
+        ):
+
+            player.y = old_y
+
+        # ----------------------------------------------------
+        # ROOM BOUNDS
+        # ----------------------------------------------------
+
+        player.left = max(
+            ROOM_BOUNDS.left + 5,
+            player.left
         )
 
-    # ========================================================
-    # CREATURE
-    # ========================================================
+        player.right = min(
+            ROOM_BOUNDS.right - 5,
+            player.right
+        )
 
-    update_creature()
+        player.top = max(
+            ROOM_BOUNDS.top + 5,
+            player.top
+        )
 
-    # ========================================================
-    # LOOK AWAY
-    # ========================================================
+        player.bottom = min(
+            ROOM_BOUNDS.bottom - 5,
+            player.bottom
+        )
 
-    if watched_vhs2 and not ending:
+        # ----------------------------------------------------
+        # AFK SYSTEM
+        # ----------------------------------------------------
 
-        look_away_timer += 1
+        update_afk_system()
+
+        # ----------------------------------------------------
+        # CREATURE
+        # ----------------------------------------------------
+
+        update_creature()
+
+        # ----------------------------------------------------
+        # VHS 2 LOOK-AWAY SYSTEM
+        # ----------------------------------------------------
+
+        if watched_vhs2:
+
+            look_away_timer += 1
+
+            if (
+                look_away_timer >= 700
+                and look_event_count == 0
+            ):
+
+                look_event_count = 1
+
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx + 220,
+                        player.centery
+                    )
+
+                show_message(
+                    "DON'T LOOK AWAY.",
+                    130
+                )
+
+            elif (
+                look_away_timer >= 1400
+                and look_event_count == 1
+            ):
+
+                look_event_count = 2
+
+                if not creature_visible:
+
+                    spawn_creature(
+                        player.centerx - 220,
+                        player.centery
+                    )
+
+                show_message(
+                    "IT MOVED.",
+                    130
+                )
+
+        # ----------------------------------------------------
+        # FLASHLIGHT BATTERY
+        # ----------------------------------------------------
 
         if (
-            look_away_timer > 700
-            and look_event_count == 0
+            flashlight_on
+            and battery > 0
         ):
 
-            look_event_count = 1
+            battery_timer += 1
 
-            show_message(
-                "SOMETHING MOVED BEHIND YOU."
-            )
+            if battery_timer >= 120:
 
-            spawn_creature(
-                player.centerx + 230,
-                player.centery
-            )
+                battery_timer = 0
 
-        elif (
-            look_away_timer > 1400
-            and look_event_count == 1
-        ):
+                battery -= 1
 
-            look_event_count = 2
+                battery = max(
+                    0,
+                    battery
+                )
 
-            show_message(
-                "IT IS LEARNING WHERE YOU GO."
-            )
+        if battery <= 0:
 
-            spawn_creature(
-                player.centerx - 220,
-                player.centery
-            )
+            flashlight_on = False
 
-    # ========================================================
-    # BATTERY
-    # ========================================================
-
-    if (
-        flashlight_on
-        and battery > 0
-        and not ending
-    ):
-
-        battery_timer += 1
-
-        if battery_timer >= 120:
-
-            battery -= 1
-            battery_timer = 0
+        # ----------------------------------------------------
+        # LOW BATTERY FLICKER
+        # ----------------------------------------------------
 
         if (
-            battery <= 20
-            and random.randint(
+            battery <= 25
+            and flashlight_on
+        ):
+
+            if random.randint(
                 1,
-                45
-            ) == 1
+                180
+            ) == 1:
+
+                flash_flicker_timer = random.randint(
+                    3,
+                    10
+                )
+
+        if flash_flicker_timer > 0:
+
+            flash_flicker_timer -= 1
+
+        # ----------------------------------------------------
+        # HORROR SYSTEMS
+        # ----------------------------------------------------
+
+        random_horror_event()
+        shadow_event()
+        house_reaction()
+
+        # ----------------------------------------------------
+        # FUSE PUZZLE
+        # ----------------------------------------------------
+
+        if (
+            fuse1
+            and fuse2
+            and fuse3
+            and not puzzle_complete
         ):
 
-            flash_flicker_timer = random.randint(
-                4,
-                10
+            puzzle_complete = True
+
+            show_message(
+                "THE EXIT POWER IS RESTORED.",
+                150
             )
+
+            fear_level = min(
+                100,
+                fear_level + 8
+            )
+
+        # ----------------------------------------------------
+        # FEAR
+        # ----------------------------------------------------
+
+        if fear_level > 0:
+
+            if random.randint(
+                1,
+                300
+            ) == 1:
+
+                fear_level -= 1
+
+        fear_level = max(
+            0,
+            min(100, fear_level)
+        )
+
+        # ----------------------------------------------------
+        # HEARTBEAT
+        # ----------------------------------------------------
+
+        if fear_level >= 70:
+
+            if heartbeat_timer <= 0:
+
+                heartbeat_timer = max(
+                    35,
+                    100 - fear_level
+                )
+
+            else:
+
+                heartbeat_timer -= 1
 
         else:
 
-            flash_flicker_timer = max(
-                0,
-                flash_flicker_timer - 1
-            )
+            heartbeat_timer = 0
 
-    # ========================================================
-    # HORROR SYSTEMS
-    # ========================================================
+        # ----------------------------------------------------
+        # TIMERS
+        # ----------------------------------------------------
 
-    random_horror_event()
+        if message_timer > 0:
+            message_timer -= 1
 
-    shadow_event()
+        if tv_glitch_timer > 0:
+            tv_glitch_timer -= 1
 
-    house_reaction()
+        if flash_timer > 0:
+            flash_timer -= 1
 
-    update_heartbeat()
+        if screen_shake > 0:
+            screen_shake -= 1
 
-    # ========================================================
-    # SHADOW DISAPPEARS WHEN APPROACHED
-    # ========================================================
+        if health_flash_timer > 0:
+            health_flash_timer -= 1
 
-    if shadow_visible:
+        if health_shake_timer > 0:
+            health_shake_timer -= 1
 
-        shadow_distance = math.hypot(
-            player.centerx - shadow_x,
-            player.centery - shadow_y
-        )
+        # ----------------------------------------------------
+        # SHADOW FADE
+        # ----------------------------------------------------
 
-        if shadow_distance < 180:
+        if shadow_visible:
 
-            shadow_visible = False
+            if random.randint(
+                1,
+                50
+            ) == 1:
 
-            show_message(
-                "THERE IS NOTHING THERE."
-            )
-
-    # ========================================================
-    # TIMERS
-    # ========================================================
-
-    message_timer = max(
-        0,
-        message_timer - 1
-    )
-
-    flash_timer = max(
-        0,
-        flash_timer - 1
-    )
-
-    screen_shake = max(
-        0,
-        screen_shake - 1
-    )
-
-    tv_glitch_timer = max(
-        0,
-        tv_glitch_timer - 1
-    )
-
-    # ========================================================
-    # FUSE PUZZLE
-    # ========================================================
-
-    if (
-        fuse1
-        and fuse2
-        and fuse3
-        and not puzzle_complete
-    ):
-
-        puzzle_complete = True
-
-        show_message(
-            "THE SECRET DOOR UNLOCKED."
-        )
-
-        fear_level = min(
-            100,
-            fear_level + 5
-        )
+                shadow_visible = False
 
     # ========================================================
     # DRAW
@@ -3427,88 +3348,114 @@ while running:
 
     else:
 
-        screen.fill(
-            BLACK
-        )
-
         draw_room()
 
-        # Shadow appears before flashlight
-        draw_shadow()
+        # ----------------------------------------------------
+        # TV GLITCH
+        # ----------------------------------------------------
 
-        draw_flashlight()
+        if tv_glitch_timer > 0:
 
-        # Heartbeat overlay
-        draw_heartbeat()
-
-        # Normal white flash
-        if flash_timer > 0:
-
-            flash = pygame.Surface(
-                (WIDTH, HEIGHT)
+            glitch = pygame.Surface(
+                (WIDTH, HEIGHT),
+                pygame.SRCALPHA
             )
 
-            flash.fill(
-                WHITE
+            glitch.fill(
+                (100, 100, 100, 30)
             )
 
-            flash.set_alpha(
-                min(
-                    180,
-                    80 +
-                    flash_timer * 5
+            for _ in range(35):
+
+                y = random.randint(
+                    0,
+                    HEIGHT - 1
                 )
-            )
+
+                pygame.draw.line(
+                    glitch,
+                    (180, 180, 180, 45),
+                    (0, y),
+                    (WIDTH, y),
+                    random.randint(1, 3)
+                )
 
             screen.blit(
-                flash,
+                glitch,
                 (0, 0)
             )
 
-        # Damage flash
-        draw_health_flash()
+        # ----------------------------------------------------
+        # FLASHLIGHT
+        # ----------------------------------------------------
+
+        draw_flashlight()
+
+        # ----------------------------------------------------
+        # HEALTH DAMAGE FLASH
+        # ----------------------------------------------------
+
+        if health_flash_timer > 0:
+
+            alpha = min(
+                120,
+                health_flash_timer * 5
+            )
+
+            red_overlay = pygame.Surface(
+                (WIDTH, HEIGHT),
+                pygame.SRCALPHA
+            )
+
+            red_overlay.fill(
+                (180, 0, 0, alpha)
+            )
+
+            screen.blit(
+                red_overlay,
+                (0, 0)
+            )
+
+        # ----------------------------------------------------
+        # SCREEN SHAKE
+        # ----------------------------------------------------
+
+        if screen_shake > 0:
+
+            shake_x = random.randint(
+                -screen_shake,
+                screen_shake
+            )
+
+            shake_y = random.randint(
+                -screen_shake,
+                screen_shake
+            )
+
+            shake_surface = screen.copy()
+
+            screen.fill(BLACK)
+
+            screen.blit(
+                shake_surface,
+                (
+                    shake_x,
+                    shake_y
+                )
+            )
+
+        # ----------------------------------------------------
+        # UI
+        # ----------------------------------------------------
 
         draw_ui()
-
         draw_message()
-
-        draw_interaction_hint()
-
-    # ========================================================
-    # SCREEN SHAKE
-    # ========================================================
-
-    if (
-        screen_shake > 0
-        and not ending
-    ):
-
-        offset_x = random.randint(
-            -screen_shake,
-            screen_shake
-        )
-
-        offset_y = random.randint(
-            -screen_shake,
-            screen_shake
-        )
-
-        shaken = screen.copy()
-
-        screen.fill(
-            BLACK
-        )
-
-        screen.blit(
-            shaken,
-            (
-                offset_x,
-                offset_y
-            )
-        )
 
     pygame.display.flip()
 
+# ============================================================
+# EXIT
+# ============================================================
 
 pygame.quit()
 sys.exit()
